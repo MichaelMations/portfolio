@@ -6,29 +6,52 @@
     <title>Under Development</title>
     <style>
         body {
+            background-color: #0d1117;
+            color: #c9d1d9;
+            font-family: 'Courier New', Courier, monospace;
             display: flex;
             flex-direction: column;
             justify-content: center;
-            align-items: center;
+            align-items: flex-start;
             height: 100vh;
+            padding: 0 5%;
             margin: 0;
-            font-family: Arial, sans-serif;
-            text-align: center;
-            background-color: #f9f9f9;
+        }
+
+        h1 {
+            color: #58a6ff;
         }
 
         a {
-            color: #007bff;
+            color: #8b949e;
             text-decoration: none;
         }
 
         a:hover {
             text-decoration: underline;
         }
+
+        .line {
+            margin: 8px 0;
+        }
+
+        .cursor {
+            display: inline-block;
+            width: 10px;
+            background-color: #c9d1d9;
+            animation: blink 1s step-end infinite;
+        }
+
+        @keyframes blink {
+            from, to { background-color: transparent; }
+            50% { background-color: #c9d1d9; }
+        }
     </style>
 </head>
 <body>
-    <h1>Under Development</h1>
-    <p>Contact me at <a href="mailto:rahm@smbotcreation.com">rahm@smbotcreation.com</a> for more info</p>
+    <h1>> Under Development</h1>
+    <div class="line">Contact: <a href="mailto:rahm@smbotcreation.com">rahm@smbotcreation.com</a></div>
+    <div class="line">Or Discord: <a href="https://discord.com/users/712381962341449769" target="_blank">@michaelmations</a></div>
+    <div class="line">_ <span class="cursor"></span></div>
 </body>
 </html>
