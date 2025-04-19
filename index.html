@@ -9,7 +9,7 @@
       background-color: #0d1117;
       color: #c9d1d9;
       font-family: 'Courier New', Courier, monospace;
-      padding: 40px;
+      padding: 20px;
       margin: 0;
       display: flex;
       justify-content: center;
@@ -23,6 +23,7 @@
       box-shadow: 0 0 10px rgba(0,0,0,0.8);
       overflow: hidden;
       display: flex;
+      flex-wrap: wrap;
     }
 
     .terminal-header {
@@ -52,6 +53,7 @@
       flex-direction: column;
       align-items: center;
       gap: 12px;
+      flex: 1 1 200px;
     }
 
     .terminal-sidebar img {
@@ -64,7 +66,7 @@
 
     .terminal-body {
       padding: 30px;
-      flex-grow: 1;
+      flex: 2 1 400px;
     }
 
     .section {
@@ -86,58 +88,69 @@
       text-decoration: underline;
     }
 
-    .cursor {
-      display: inline-block;
-      width: 10px;
-      background-color: #c9d1d9;
-      animation: blink 1s step-end infinite;
+    .typewriter {
+      overflow: hidden;
+      border-right: .1em solid #c9d1d9;
+      white-space: nowrap;
+      animation: typing 2.5s steps(40, end), blink-caret .75s step-end infinite;
     }
 
-    code {
-      color: #79c0ff;
-      background-color: #1b1f24;
-      padding: 2px 6px;
-      border-radius: 4px;
+    @keyframes typing {
+      from { width: 0 }
+      to { width: 100% }
     }
 
-    @keyframes blink {
-      from, to { background-color: transparent; }
-      50% { background-color: #c9d1d9; }
+    @keyframes blink-caret {
+      from, to { border-color: transparent }
+      50% { border-color: #c9d1d9 }
+    }
+
+    @media (max-width: 768px) {
+      .terminal {
+        flex-direction: column;
+      }
+
+      .terminal-sidebar {
+        border-right: none;
+        border-bottom: 1px solid #21262d;
+      }
+
+      .terminal-body {
+        padding: 20px;
+      }
     }
   </style>
 </head>
 <body>
   <div class="terminal">
+    <div class="terminal-header">
+      <div class="dot red"></div>
+      <div class="dot yellow"></div>
+      <div class="dot green"></div>
+    </div>
     <div class="terminal-sidebar">
       <img src="profile.png" alt="Rahm Profile Picture" />
       <code>@michaelmations</code>
     </div>
-    <div style="width: 100%;">
-      <div class="terminal-header">
-        <div class="dot red"></div>
-        <div class="dot yellow"></div>
-        <div class="dot green"></div>
+    <div class="terminal-body">
+      <div class="section">
+        <div class="section-title">$ whoami</div>
+        <div class="typewriter">> Rahm (MichaelMations) — Full-stack Developer, Discord Bot Maker, Roblox Scripter</div>
+        <div>> Obsessed with clean tools and automating everything</div>
       </div>
-      <div class="terminal-body">
-        <div class="section">
-          <div class="section-title">$ whoami</div>
-          <div>> <code>Rahm (MichaelMations)</code> — Full-stack Developer, Discord Bot Maker, Roblox Scripter</div>
-          <div>> Obsessed with clean tools and automating everything</div>
-        </div>
 
-        <div class="section">
-          <div class="section-title">$ projects</div>
-          <div>> <code>GoLocal</code> – iOS app for map-based events (WIP)</div>
-          <div>> <code>SM Modmail Bot</code> – Custom support system with premium</div>
-          <div>> <code>Server Log System</code> – Roblox event logger with webhook</div>
-          <div>> More projects coming soon<span class="cursor"></span></div>
-        </div>
+      <div class="section">
+        <div class="section-title">$ projects</div>
+        <div class="typewriter">> GoLocal – iOS app for map-based events (WIP)</div>
+        <div>> SM Modmail Bot – Custom support system with premium</div>
+        <div>> Server Log System – Roblox event logger with webhook</div>
+        <div>> More projects coming soon<span class="cursor"></span></div>
+      </div>
 
-        <div class="section">
-          <div class="section-title">$ contact</div>
-          <div>> Email: <a href="mailto:rahm@smbotcreation.com">rahm@smbotcreation.com</a></div>
-          <div>> Discord: <a href="https://discord.com/users/712381962341449769">@michaelmations</a></div>
-        </div>
+      <div class="section">
+        <div class="section-title">$ contact</div>
+        <div class="typewriter">> Email: <a href="mailto:rahm@smbotcreation.com">rahm@smbotcreation.com</a></div>
+        <div>> Discord: <a href="https://discord.com/users/712381962341449769">@michaelmations</a></div>
       </div>
     </div>
   </div>
