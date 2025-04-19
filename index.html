@@ -1,111 +1,75 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Rahm (MichaelMations) - Portfolio</title>
-  <style>
-    body {
-      background-color: #0d1117;
-      color: #c9d1d9;
-      font-family: 'Courier New', Courier, monospace;
-      padding: 40px;
-      margin: 0;
-      display: flex;
-      justify-content: center;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Under Development</title>
+    <style>
+        body {
+            background-color: #0d1117;
+            color: #c9d1d9;
+            font-family: 'Courier New', Courier, monospace;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: flex-start;
+            height: 100vh;
+            padding: 0 5%;
+            margin: 0;
+        }
 
-    .terminal {
-      background-color: #161b22;
-      width: 100%;
-      max-width: 900px;
-      border-radius: 8px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.8);
-      overflow: hidden;
-    }
+        .profile {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
 
-    .terminal-header {
-      background-color: #21262d;
-      display: flex;
-      align-items: center;
-      padding: 10px;
-    }
+        .profile img {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            border: 2px solid #58a6ff;
+            margin-right: 20px;
+        }
 
-    .dot {
-      height: 12px;
-      width: 12px;
-      border-radius: 50%;
-      margin-right: 6px;
-    }
+        h1 {
+            color: #58a6ff;
+            margin: 0;
+        }
 
-    .dot.red { background-color: #ff5f56; }
-    .dot.yellow { background-color: #ffbd2e; }
-    .dot.green { background-color: #27c93f; }
+        a {
+            color: #8b949e;
+            text-decoration: none;
+        }
 
-    .terminal-body {
-      padding: 20px 30px;
-    }
+        a:hover {
+            text-decoration: underline;
+        }
 
-    .section {
-      margin-bottom: 30px;
-    }
+        .line {
+            margin: 8px 0;
+        }
 
-    .section-title {
-      color: #58a6ff;
-      font-weight: bold;
-      margin-bottom: 8px;
-    }
+        .cursor {
+            display: inline-block;
+            width: 10px;
+            background-color: #c9d1d9;
+            animation: blink 1s step-end infinite;
+        }
 
-    a {
-      color: #8b949e;
-      text-decoration: none;
-    }
-
-    a:hover {
-      text-decoration: underline;
-    }
-
-    .cursor {
-      display: inline-block;
-      width: 10px;
-      background-color: #c9d1d9;
-      animation: blink 1s step-end infinite;
-    }
-
-    @keyframes blink {
-      from, to { background-color: transparent; }
-      50% { background-color: #c9d1d9; }
-    }
-  </style>
+        @keyframes blink {
+            from, to { background-color: transparent; }
+            50% { background-color: #c9d1d9; }
+        }
+    </style>
 </head>
 <body>
-  <div class="terminal">
-    <div class="terminal-header">
-      <div class="dot red"></div>
-      <div class="dot yellow"></div>
-      <div class="dot green"></div>
+    <div class="profile">
+        <img src="profile.png" alt="Profile Picture">
+        <h1>> Under Development</h1>
     </div>
-    <div class="terminal-body">
-      <div class="section">
-        <div class="section-title">$ whoami</div>
-        <div>> Rahm (MichaelMations) — Full-stack Developer, Discord Bot Maker, Roblox Scripter</div>
-        <div>> Obsessed with clean tools and automating everything</div>
-      </div>
-
-      <div class="section">
-        <div class="section-title">$ projects</div>
-        <div>> GoLocal – iOS app for map-based events (WIP)</div>
-        <div>> SM Modmail Bot – Custom support system with premium</div>
-        <div>> Server Log System – Roblox event logger with webhook</div>
-        <div>> More projects coming soon<span class="cursor"></span></div>
-      </div>
-
-      <div class="section">
-        <div class="section-title">$ contact</div>
-        <div>> Email: <a href="mailto:rahm@smbotcreation.com">rahm@smbotcreation.com</a></div>
-        <div>> Discord: <a href="https://discord.com/users/712381962341449769">@michaelmations</a></div>
-      </div>
-    </div>
-  </div>
+    <div class="line">Contact: <a href="mailto:rahm@smbotcreation.com">rahm@smbotcreation.com</a></div>
+    <div class="line">Or Discord: <a href="https://discord.com/users/712381962341449769" target="_blank">@michaelmations</a></div>
+    <div class="line">_ <span class="cursor"></span></div>
 </body>
 </html>
