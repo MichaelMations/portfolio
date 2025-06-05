@@ -1,158 +1,426 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Rahm (MichaelMations) - Portfolio</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Rahm — Discord Bot Developer Portfolio</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
   <style>
+    :root {
+      --color-bg: #ffffff;
+      --color-text: #4b5563;
+      --color-headline: #1f2937;
+      --color-accent: #1e40af;
+      --color-card-bg: #f9fafb;
+      --card-bg-gradient: linear-gradient(145deg, #ffffff, #f6f8ff);
+      --radius: 0.9rem;
+      --shadow-light: rgba(30, 64, 175, 0.12);
+      --shadow-hover: rgba(30, 64, 175, 0.28);
+      --border-color: rgba(30, 64, 175, 0.11);
+      --transition: 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+      --max-width: 1200px;
+      --card-max-width: 720px;
+      --gap: 1.5rem;
+    }
+
+    /* Reset & base */
+    *, *::before,
+    *::after {
+      box-sizing: border-box;
+    }
+
     body {
-      background-color: #0d1117;
-      color: #c9d1d9;
-      font-family: 'Courier New', Courier, monospace;
-      padding: 20px;
       margin: 0;
-      display: flex;
-      justify-content: center;
-    }
-
-    .terminal {
-      background-color: #161b22;
-      width: 100%;
-      max-width: 960px;
-      border-radius: 8px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.8);
-      overflow: hidden;
-      display: flex;
-      flex-wrap: wrap;
-    }
-
-    .terminal-header {
-      background-color: #21262d;
-      display: flex;
-      align-items: center;
-      padding: 10px;
-      width: 100%;
-    }
-
-    .dot {
-      height: 12px;
-      width: 12px;
-      border-radius: 50%;
-      margin-right: 6px;
-    }
-
-    .dot.red { background-color: #ff5f56; }
-    .dot.yellow { background-color: #ffbd2e; }
-    .dot.green { background-color: #27c93f; }
-
-    .terminal-sidebar {
-      background-color: #0d1117;
-      border-right: 1px solid #21262d;
-      padding: 30px 20px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 12px;
-      flex: 1 1 200px;
-    }
-
-    .terminal-sidebar img {
-      width: 100px;
-      height: 100px;
-      border-radius: 50%;
-      border: 2px solid #58a6ff;
-      object-fit: cover;
-    }
-
-    .terminal-body {
-      padding: 30px;
-      flex: 2 1 400px;
-    }
-
-    .section {
-      margin-bottom: 30px;
-    }
-
-    .section-title {
-      color: #58a6ff;
-      font-weight: bold;
-      margin-bottom: 8px;
+      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu,
+        Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+      background-color: var(--color-bg);
+      color: var(--color-text);
+      line-height: 1.6;
+      font-weight: 400;
+      font-size: 17px;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      -webkit-text-size-adjust: 100%;
+      -moz-text-size-adjust: 100%;
+      -ms-text-size-adjust: 100%;
+      text-size-adjust: 100%;
+      -webkit-tap-highlight-color: transparent;
+      -webkit-font-variant-ligatures: none;
+      font-variant-ligatures: none;
     }
 
     a {
-      color: #8b949e;
+      color: inherit;
       text-decoration: none;
+      cursor: pointer;
+      transition: color var(--transition);
     }
 
-    a:hover {
-      text-decoration: underline;
+    a:hover,
+    a:focus {
+      color: var(--color-accent);
+      outline: none;
     }
 
-    .typewriter {
-      overflow: hidden;
-      border-right: .1em solid #c9d1d9;
-      white-space: nowrap;
-      animation: typing 2.5s steps(40, end), blink-caret .75s step-end infinite;
+    main {
+      max-width: var(--max-width);
+      margin-left: auto;
+      margin-right: auto;
+      padding-left: 1rem;
+      padding-right: 1rem;
     }
 
-    @keyframes typing {
-      from { width: 0 }
-      to { width: 100% }
+    /* Navigation */
+    header {
+      position: sticky;
+      top: 0;
+      background: var(--color-bg);
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+      z-index: 100;
+      backdrop-filter: saturate(180%) blur(10px);
     }
 
-    @keyframes blink-caret {
-      from, to { border-color: transparent }
-      50% { border-color: #c9d1d9 }
+    .nav-container {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem 1.5rem;
     }
 
-    @media (max-width: 768px) {
-      .terminal {
+    .logo {
+      font-weight: 700;
+      font-size: 1.375rem;
+      color: var(--color-accent);
+      letter-spacing: -0.02em;
+      user-select: none;
+      user-drag: none;
+    }
+
+    nav ul {
+      list-style: none;
+      display: flex;
+      align-items: center;
+      gap: 2rem;
+      margin: 0;
+      padding: 0;
+    }
+
+    nav li {
+      font-weight: 600;
+      font-size: 1rem;
+    }
+
+    nav a {
+      padding: 0.5rem 0.25rem;
+      border-radius: 0.375rem;
+      transition: background-color var(--transition), color var(--transition);
+    }
+
+    nav a:hover,
+    nav a:focus {
+      background-color: var(--color-accent);
+      color: #fff;
+      outline-offset: 2px;
+    }
+
+    /* Bigger Hero Section */
+    .hero {
+      padding: 6rem 1rem 5rem;
+      max-width: 720px;
+      margin: 0 auto 5rem;
+      text-align: center;
+    }
+
+    .hero h1 {
+      font-weight: 800;
+      font-size: clamp(3.5rem, 6vw, 4.5rem);
+      line-height: 1.1;
+      color: var(--color-headline);
+      margin: 0 0 0.75rem 0;
+      user-select: none;
+    }
+
+    .hero p {
+      font-weight: 500;
+      font-size: 1.25rem;
+      color: var(--color-text);
+      margin: 0 0 2.5rem 0;
+      line-height: 1.5;
+      user-select: text;
+    }
+
+    .btn-primary {
+      background-color: var(--color-accent);
+      color: #fff;
+      font-weight: 600;
+      font-size: 1.15rem;
+      padding: 0.85rem 3rem;
+      border: none;
+      border-radius: var(--radius);
+      cursor: pointer;
+      box-shadow: 0 7px 18px rgb(30 64 175 / 0.3);
+      transition: background-color var(--transition), transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      user-select: none;
+      display: inline-block;
+      text-align: center;
+      text-decoration: none;
+      line-height: 1.3;
+    }
+
+    .btn-primary:hover,
+    .btn-primary:focus {
+      background-color: #162c9e;
+      transform: scale(1.05);
+      outline: none;
+      box-shadow: 0 10px 28px rgb(30 64 175 / 0.5);
+    }
+
+    /* Jobs Section */
+    .jobs-section {
+      max-width: var(--max-width);
+      margin: 0 auto 6rem;
+      padding: 0 1rem;
+    }
+
+    .jobs-section h2 {
+      font-weight: 700;
+      font-size: 2.5rem;
+      color: var(--color-headline);
+      margin-bottom: 3.5rem;
+      text-align: center;
+      user-select: none;
+    }
+
+    .job-card {
+      background: var(--card-bg-gradient);
+      max-width: var(--card-max-width);
+      margin: 0 auto var(--gap);
+      padding: 2.8rem 3.5rem;
+      border-radius: var(--radius);
+      box-shadow: 0 8px 20px var(--shadow-light);
+      border: 1px solid var(--border-color);
+      display: flex;
+      gap: 1.8rem;
+      transition: box-shadow var(--transition), transform var(--transition), border-color var(--transition);
+      cursor: pointer;
+      align-items: flex-start;
+      outline: none;
+    }
+
+    .job-card:hover {
+      box-shadow: 0 20px 45px var(--shadow-hover);
+      transform: scale(1.03);
+      border-color: var(--color-accent);
+      background: #f5f9ff;
+    }
+
+    .job-icon {
+      font-size: 3.6rem;
+      color: var(--color-accent);
+      user-select: none;
+      flex-shrink: 0;
+      line-height: 1;
+      margin-top: 4px;
+    }
+
+    .job-info {
+      flex: 1;
+    }
+
+    .job-title {
+      font-weight: 700;
+      font-size: 1.45rem;
+      color: var(--color-accent);
+      margin: 0 0 0.3rem 0;
+      user-select: text;
+    }
+
+    .job-company {
+      font-weight: 600;
+      font-size: 1.05rem;
+      color: #334155;
+      margin: 0 0 0.25rem 0;
+      user-select: text;
+    }
+
+    .job-description {
+      margin-top: 1.1rem;
+      font-weight: 500;
+      font-size: 1.05rem;
+      color: var(--color-text);
+      line-height: 1.45;
+      user-select: text;
+    }
+
+    /* Contact Section */
+    .contact-section {
+      max-width: 600px;
+      margin: 0 auto 6rem;
+      padding: 0 1rem 4rem;
+      border-radius: var(--radius);
+      background-color: var(--color-card-bg);
+      box-shadow: 0 4px 14px rgba(30, 64, 175, 0.12);
+      text-align: center;
+      user-select: text;
+    }
+
+    .contact-section h2 {
+      font-weight: 700;
+      font-size: 2.5rem;
+      color: var(--color-headline);
+      margin-bottom: 1.75rem;
+    }
+
+    .contact-email {
+      font-size: 1.15rem;
+      color: var(--color-accent);
+      text-decoration: none;
+      font-weight: 600;
+      border-bottom: 2px solid transparent;
+      padding-bottom: 2px;
+      transition: border-color 0.3s ease, color 0.3s ease;
+      user-select: text;
+    }
+
+    .contact-email:hover,
+    .contact-email:focus {
+      border-color: var(--color-accent);
+      color: #162c9e;
+      outline: none;
+    }
+
+    /* Responsive */
+    @media (max-width: 700px) {
+      .job-card {
         flex-direction: column;
+        max-width: 100%;
+        padding: 2rem 2rem;
       }
 
-      .terminal-sidebar {
-        border-right: none;
-        border-bottom: 1px solid #21262d;
-      }
-
-      .terminal-body {
-        padding: 20px;
+      .job-icon {
+        margin-bottom: 1rem;
+        margin-top: 0;
       }
     }
   </style>
 </head>
+
 <body>
-  <div class="terminal">
-    <div class="terminal-header">
-      <div class="dot red"></div>
-      <div class="dot yellow"></div>
-      <div class="dot green"></div>
+  <header>
+    <div class="nav-container" role="banner" aria-label="Primary Navigation">
+      <a href="#" class="logo" aria-label="Homepage">Rahm</a>
+      <nav>
+        <ul role="menubar" aria-label="Main Navigation">
+          <li role="none"><a role="menuitem" href="#about" tabindex="0">About</a></li>
+          <li role="none"><a role="menuitem" href="#jobs" tabindex="0">Current Roles</a></li>
+          <li role="none"><a role="menuitem" href="#contact" tabindex="0">Contact</a></li>
+        </ul>
+      </nav>
     </div>
-    <div class="terminal-sidebar">
-      <img src="profile.png" alt="Rahm Profile Picture" />
-      <code>@michaelmations</code>
-    </div>
-    <div class="terminal-body">
-      <div class="section">
-        <div class="section-title">$ whoami</div>
-        <div class="typewriter">> Rahm (MichaelMations) — Full-stack Developer, Discord Bot Maker, Roblox Scripter</div>
-        <div>> Obsessed with clean tools and automating everything</div>
-      </div>
+  </header>
 
-      <div class="section">
-        <div class="section-title">$ projects</div>
-        <div class="typewriter">> GoLocal – iOS app for map-based events (WIP)</div>
-        <div>> SM Modmail Bot – Custom support system with premium</div>
-        <div>> Server Log System – Roblox event logger with webhook</div>
-        <div>> More projects coming soon<span class="cursor"></span></div>
-      </div>
+  <main>
+    <section class="hero" aria-labelledby="hero-heading">
+      <h1 id="hero-heading">Hi, I'm Rahm — Discord Bot Developer</h1>
+      <p>
+        I have been crafting powerful and efficient Discord bots for over one year,
+        utilizing JavaScript and Node.js to automate communities and create engaging user experiences.
+      </p>
+      <a href="#jobs" class="btn-primary" role="button">Explore My Roles</a>
+    </section>
 
-      <div class="section">
-        <div class="section-title">$ contact</div>
-        <div class="typewriter">> Email: <a href="mailto:rahm@smbotcreation.com">rahm@smbotcreation.com</a></div>
-        <div>> Discord: <a href="https://discord.com/users/712381962341449769">@michaelmations</a></div>
+    <section id="jobs" class="jobs-section" aria-labelledby="jobs-heading">
+      <h2 id="jobs-heading">Current Roles</h2>
+
+     <!-- Job 1 -->
+    <article class="job-card" tabindex="0" role="link" aria-labelledby="job1-title job1-company" aria-describedby="job1-desc" data-link="https://serverplus.com">
+      <div class="job-icon" aria-hidden="true">🤖</div>
+      <div class="job-info">
+        <h3 id="job1-title" class="job-title">Lead Discord Bot Developer</h3>
+        <p id="job1-company" class="job-company">ServerPlus Community</p>
+        <p id="job1-desc" class="job-description">
+          Architected and maintained a multi-functional Discord bot handling moderation, custom commands,
+          and dynamic event notifications for thousands of users.
+        </p>
       </div>
-    </div>
-  </div>
+    </article>
+
+    <!-- Job 2 -->
+    <article class="job-card" tabindex="0" role="link" aria-labelledby="job2-title job2-company" aria-describedby="job2-desc" data-link="https://guildbot.com">
+      <div class="job-icon" aria-hidden="true">🛠️</div>
+      <div class="job-info">
+        <h3 id="job2-title" class="job-title">Bot Automation Specialist</h3>
+        <p id="job2-company" class="job-company">GuildBot Systems</p>
+        <p id="job2-desc" class="job-description">
+          Developed and customized advanced workflows and integrations,
+          including role management, automated responses, and event tracking tailored for gaming communities.
+        </p>
+      </div>
+    </article>
+
+    <!-- Job 3 -->
+    <article class="job-card" tabindex="0" role="link" aria-labelledby="job3-title job3-company" aria-describedby="job3-desc" data-link="https://tyma.com">
+      <div class="job-icon" aria-hidden="true">💬</div>
+      <div class="job-info">
+        <h3 id="job3-title" class="job-title">Bot Developer</h3>
+        <p id="job3-company" class="job-company">Tyma</p>
+        <p id="job3-desc" class="job-description">
+          Developed interactive Discord bots featuring moderation tools, user engagement systems, and custom commands tailored for vibrant online communities.
+        </p>
+      </div>
+    </article>
+
+    <!-- Job 4 -->
+    <article class="job-card" tabindex="0" role="link" aria-labelledby="job4-title job4-company" aria-describedby="job4-desc" data-link="https://nourity.com">
+      <div class="job-icon" aria-hidden="true">⚙️</div>
+      <div class="job-info">
+        <h3 id="job4-title" class="job-title">Company Engineer</h3>
+        <p id="job4-company" class="job-company">Nourity Corporations</p>
+        <p id="job4-desc" class="job-description">
+          Developed and maintained Discord bot systems, integrating APIs and optimizing automation to support company-wide communication and community engagement.
+        </p>
+      </div>
+    </article>
+
+    <!-- Job 5 -->
+    <article class="job-card" tabindex="0" role="link" aria-labelledby="job5-title job5-company" aria-describedby="job5-desc" data-link="https://rodevs.com">
+      <div class="job-icon" aria-hidden="true">🧑‍💻</div>
+      <div class="job-info">
+        <h3 id="job5-title" class="job-title">Freelance Discord Bot Developer</h3>
+        <p id="job5-company" class="job-company">RoDevs & Independent</p>
+        <p id="job5-desc" class="job-description">
+          Created custom Discord bots tailored to client needs, including automation, moderation tools, and premium feature integrations, serving a variety of communities and businesses.
+        </p>
+      </div>
+    </article>
+  </section>
+
+<h2>Contact Me</h2>
+Or email me at <a href="mailto:rahm@smbotcreation.com">rahm@smbotcreation.com</a>
+  </main>
+
+  <script>
+    // Make .job-card clickable opening the data-link URL in a new tab
+    document.querySelectorAll('.job-card').forEach(card => {
+      card.addEventListener('click', e => {
+        const url = card.dataset.link;
+        if (url) {
+          window.open(url, '_blank', 'noopener,noreferrer');
+        }
+      });
+      // Enable keyboard click (Enter/Space) for accessibility
+      card.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          card.click();
+        }
+      });
+    });
+  </script>
 </body>
+
 </html>
+
