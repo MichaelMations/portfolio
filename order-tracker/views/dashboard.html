@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Order Tracker - Dashboard</title>
+  <link rel="stylesheet" href="/order-tracker.css" />
+</head>
+<body>
+  <main class="container">
+    <h1>Welcome, {{username}}</h1>
+    <h2>Your Commissions</h2>
+    {{commissionList}}
+    <form action="/order-tracker/logout" method="POST">
+      <button type="submit" class="btn">Sign Out</button>
+    </form>
+    {{adminLink}}
+  </main>
+</body>
+</html>
