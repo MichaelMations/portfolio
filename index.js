@@ -5,10 +5,10 @@ const mongoose = require('mongoose');
 const axios = require('axios');
 const multer = require('multer');
 const path = require('path');
+const fs = require('fs');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const { DISCORD_USER_ID } = process.env;
 
 const {
   SESSION_SECRET,
@@ -16,31 +16,35 @@ const {
   DISCORD_CLIENT_SECRET,
   DISCORD_REDIRECT_URI,
   MONGODB_URI,
-  ADMIN_DISCORD_ID,
+  DISCORD_USER_ID,
 } = process.env;
 
-mongoose.connect(MONGODB_URI)
-  .then(() => console.log('✅ Connected to MongoDB'))
-  .catch(console.error);
+// Support multiple admin IDs
+const ADMIN_DISCORD_ID = (process.env.ADMIN_DISCORD_ID || '').split(',').map(id => id.trim());
 
-// Multer setup for PNG uploads to /public/uploads
+
+
+// Connect to MongoDB
+mongoose.connect(MONGODB_URI)
+  .then(() => console.log('MongoDB connected!'))
+  .catch(err => console.error('MongoDB connection error:', err));
+
+// Setup uploads folder
+const uploadsDir = path.join(__dirname, 'public/uploads');
+if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
+
+// Multer for PNG uploads only
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, 'public/uploads/');
-  },
+  destination: (req, file, cb) => cb(null, uploadsDir),
   filename: (req, file, cb) => {
-    const uniqueName = Date.now() + '-' + file.originalname.replace(/\s+/g, '-');
-    cb(null, uniqueName);
+    const safeName = Date.now() + '-' + file.originalname.replace(/\s+/g, '-');
+    cb(null, safeName);
   },
 });
 const upload = multer({
   storage,
   fileFilter: (req, file, cb) => {
-    if (file.mimetype === 'image/png') {
-      cb(null, true);
-    } else {
-      cb(new Error('Only PNG images are allowed'));
-    }
+    cb(null, file.mimetype === 'image/png');
   },
 });
 
@@ -51,7 +55,7 @@ const updateSchema = new mongoose.Schema({
   visible: { type: Boolean, default: false },
   progressPercent: { type: Number, min: 0, max: 100, default: 0 },
   showPercent: { type: Boolean, default: true },
-  image: { type: String, default: null }, // store image filepath relative to /public
+  image: { type: String, default: null },
 });
 
 const commissionSchema = new mongoose.Schema({
@@ -65,6 +69,7 @@ const commissionSchema = new mongoose.Schema({
 
 const Commission = mongoose.model('Commission', commissionSchema);
 
+// Middleware
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
 app.use(session({
@@ -75,686 +80,1146 @@ app.use(session({
 
 // Helpers
 function isAdmin(req, res, next) {
-  if (req.session.user && req.session.user.id === ADMIN_DISCORD_ID) return next();
+  if (req.session.user && ADMIN_DISCORD_ID.includes(req.session.user.id)) return next();
   res.status(403).send('Forbidden: Admins only');
 }
+
 function escapeHTML(str) {
-  return String(str).replace(/[&<>"']/g, m => ({
+  return String(str).replace(/[&<>"']/g, c => ({
     '&': '&amp;',
     '<': '&lt;',
     '>': '&gt;',
     '"': '&quot;',
-    "'": '&#39;'
-  })[m]);
+    "'": '&#39;',
+  })[c]);
 }
 
-// ROUTES
+// Routes
 
-// Home portfolio
+// Homepage
 app.get('/', (req, res) => {
   res.send(`
-  <html>
-  <head><title>Portfolio</title>
-  <style>
-    body { font-family: Arial, sans-serif; padding: 2rem; background:#f9f9f9; color:#222;}
-    a { color: #0078d7; text-decoration:none;}
-    a:hover { text-decoration:underline;}
-  </style>
-  </head>
-  <body>
-    <h1>Welcome to My Portfolio</h1>
-    <p><a href="/order-tracker">Go to Order Tracker</a></p>
-  </body>
-  </html>`);
-});
-
-// Order Tracker dashboard (user)
-app.get('/order-tracker', async (req, res) => {
-  if (!req.session.user) {
-    res.send(`
-        <!DOCTYPE html>
-        <html lang="en">
-        <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <title>Your Commissions</title>
+    <html>
+      <head>
+        <title>My Portfolio</title>
         <style>
-        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
-
-        body {
-            margin: 0;
-            font-family: 'Poppins', sans-serif;
-            background: #f4f6fc;
-            color: #222;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
-
-        header {
-            background: #5865F2;
-            color: white;
-            padding: 2rem 1rem;
+          body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #fafafa;
+            padding: 2rem;
             text-align: center;
-            box-shadow: 0 4px 8px rgba(88,101,242,0.3);
-        }
-
-        header h1 {
-            margin: 0;
-            font-weight: 700;
-            font-size: 2.2rem;
-        }
-
-        header h2 {
-            margin-top: 0.25rem;
-            font-weight: 500;
-            font-size: 1.2rem;
-            opacity: 0.8;
-        }
-
-        main {
-            max-width: 900px;
-            margin: 2rem auto;
-            padding: 0 1rem;
-            flex-grow: 1;
-        }
-
-        .actions {
-            text-align: center;
-            margin-bottom: 2rem;
-        }
-
-        .actions a.button,
-        .actions form button {
-            background: #5865F2;
-            color: white;
-            border: none;
-            padding: 0.75rem 2.5rem;
-            border-radius: 40px;
-            font-weight: 700;
-            font-size: 1rem;
-            cursor: pointer;
-            margin: 0 0.75rem 1rem 0.75rem;
-            box-shadow: 0 6px 20px rgba(88,101,242,0.4);
-            transition: background-color 0.3s ease, box-shadow 0.3s ease;
+            color: #333;
+          }
+          a {
+            color: #4a90e2;
             text-decoration: none;
-            display: inline-block;
-        }
-
-        .actions a.button:hover,
-        .actions form button:hover {
-            background: #4752c4;
-            box-shadow: 0 10px 30px rgba(71,82,196,0.6);
-        }
-
-        .commission-list {
-            display: grid;
-            grid-template-columns: repeat(auto-fit,minmax(320px,1fr));
-            gap: 1.5rem;
-        }
-
-        .commission-card {
-            background: white;
-            border-radius: 14px;
-            padding: 1.5rem;
-            box-shadow: 0 6px 20px rgba(0,0,0,0.05);
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            transition: box-shadow 0.3s ease;
-        }
-
-        .commission-card:hover {
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-        }
-
-        .commission-card h3 {
-            margin: 0 0 0.5rem 0;
             font-weight: 600;
-            color: #5865F2;
-            font-size: 1.3rem;
-        }
-
-        .commission-status {
-            font-weight: 600;
-            margin-bottom: 1rem;
-            color: #444;
-        }
-
-        .commission-date {
-            font-size: 0.85rem;
-            color: #777;
-            margin-bottom: 1rem;
-        }
-
-        .commission-updates {
-            max-height: 160px;
-            overflow-y: auto;
-            border-top: 1px solid #eee;
-            padding-top: 1rem;
-        }
-
-        .update {
-            margin-bottom: 1rem;
-            font-size: 0.95rem;
-            color: #555;
-        }
-
-        .update strong {
-            color: #5865F2;
-        }
-
-        .update img {
-            max-width: 100%;
-            max-height: 140px;
-            border-radius: 8px;
-            margin-top: 0.4rem;
-        }
-
-        footer {
-            text-align: center;
-            padding: 1.5rem;
-            font-size: 0.9rem;
-            color: #888;
-        }
-
-        @media (max-width: 480px) {
-            .actions a.button, .actions form button {
-            width: 100%;
-            margin: 0.5rem 0;
-            }
-        }
+          }
+          a:hover {
+            text-decoration: underline;
+          }
         </style>
-        </head>
-        <body>
-        <header>
-        <h1>Welcome, ${escapeHTML(req.session.user.username)}#${escapeHTML(req.session.user.discriminator)}</h1>
-        <h2>Your Commissions</h2>
-        </header>
-
-        <main>
-        <div class="actions">
-            <a href="https://discord.com/users/${DISCORD_USER_ID}" target="_blank" rel="noopener noreferrer" class="button" aria-label="Request Commission via Discord">
-            Request a Commission
-            </a>
-            <form action="/order-tracker/logout" method="POST" style="display:inline;">
-            <button type="submit" aria-label="Sign Out">Sign Out</button>
-            </form>
-            ${req.session.user.id === ADMIN_DISCORD_ID ? `
-            <a href="/order-tracker/admin" class="button" aria-label="Admin Panel">Admin Panel</a>` : ''}
-        </div>
-
-        <section class="commission-list">
-            ${commissionListHTML}
-        </section>
-        </main>
-
-        <footer>&copy; ${new Date().getFullYear()} Your Company Name</footer>
-
-        </body>
-        </html>
-        `);
-
-
-  }
-
-  const userId = req.session.user.id;
-  const commissions = await Commission.find({ userId }).lean();
-
-  let commissionListHTML = '';
-  if (commissions.length === 0) {
-    commissionListHTML = '<p>You have no commissions yet.</p>';
-  } else {
-    commissionListHTML = '<ul style="list-style:none; padding:0;">';
-    commissions.forEach(c => {
-      let updatesHTML = '';
-      if (c.updates && c.updates.length) {
-        const visibleUpdates = c.updates.filter(u => u.visible);
-        if (visibleUpdates.length) {
-          updatesHTML += '<ul style="margin-top: 0.5rem;">';
-          visibleUpdates.forEach(u => {
-            updatesHTML += `
-            <li style="background:#eef2f5; margin:0.25rem 0; padding:0.5rem; border-radius:6px;">
-              ${u.showPercent ? `<strong>Progress:</strong> ${u.progressPercent}%<br/>` : ''}
-              <em>${escapeHTML(u.text)}</em><br/>
-              <small>${new Date(u.date).toLocaleString()}</small>
-              ${u.image ? `<br/><img src="${escapeHTML(u.image)}" alt="Update image" style="max-width:300px; margin-top:0.5rem; border-radius:6px;"/>` : ''}
-            </li>`;
-          });
-          updatesHTML += '</ul>';
-        }
-      }
-
-      commissionListHTML += `
-      <li style="background:white; margin:0.5rem 0; padding:1rem; border-radius:8px; box-shadow:0 2px 5px rgba(0,0,0,0.1);">
-        <strong>Description:</strong> ${escapeHTML(c.description)}<br/>
-        <strong>Status:</strong> ${escapeHTML(c.status)}<br/>
-        <small>Created: ${new Date(c.createdAt).toLocaleString()}</small>
-        ${updatesHTML}
-      </li>`;
-    });
-    commissionListHTML += '</ul>';
-  }
-
-  res.send(`
-  <html>
-  <head>
-    <title>Your Commissions</title>
-    <style>
-      body {
-        font-family: Arial, sans-serif;
-        max-width: 700px;
-        margin: 2rem auto;
-        background: #f6f8fa;
-        padding: 2rem;
-        border-radius: 8px;
-      }
-      h1, h2 {
-        text-align: center;
-        color: #333;
-      }
-      button, a.button {
-        background: #5865F2;
-        color: white;
-        border: none;
-        padding: 0.5rem 1rem;
-        margin-top: 1rem;
-        border-radius: 5px;
-        cursor: pointer;
-        font-weight: bold;
-        text-decoration: none;
-        display: inline-block;
-      }
-      button:hover, a.button:hover {
-        background: #4752c4;
-      }
-      .admin-link {
-        margin-top: 1rem;
-        display: block;
-        text-align: center;
-      }
-      form { text-align: center; margin-top: 2rem; }
-    </style>
-  </head>
-  <body>
-   <h1>Welcome, ${escapeHTML(req.session.user.username)}#${escapeHTML(req.session.user.discriminator)}</h1>
-<h2>Your Commissions</h2>
-${commissionListHTML}
-
-<p style="text-align:center; margin: 1rem 0;">
-<a href="https://discord.com/users/${DISCORD_USER_ID}" target="_blank" 
-   style="background:#5865F2; color:white; padding:0.6rem 1.2rem; border-radius:5px; text-decoration:none; font-weight:bold; display:inline-block;">
-  Request Commission
-</a>
-</p>
-
-<form action="/order-tracker/logout" method="POST">
-  <button type="submit">Sign Out</button>
-</form>
-${req.session.user.id === ADMIN_DISCORD_ID ? '<a href="/order-tracker/admin" class="admin-link">Go to Admin Panel</a>' : ''}
-
-  </body>
-  </html>
+      </head>
+      <body>
+        <h1>Hey there! Welcome to my portfolio.</h1>
+        <p>Check out my <a href="/order-tracker">Order Tracker</a>.</p>
+      </body>
+    </html>
   `);
 });
 
-// Admin panel
+// Order Tracker - Dashboard
+// app.get('/order-tracker', async (req, res) => {
+//   if (!req.session.user) {
+//     return res.send(`
+//       <html><body style="font-family:sans-serif; padding:2rem; text-align:center;">
+//         <h2>Please <a href="/order-tracker/login">log in with Discord</a> to see your commissions.</h2>
+//       </body></html>
+//     `);
+//   }
+
+app.get('/order-tracker', async (req, res) => {
+  if (!req.session.user) {
+    return res.send(`
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Login - Order Tracker</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #121212;
+      color: #ddd;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      flex-direction: column;
+      text-align: center;
+      padding: 1rem;
+    }
+    h2 {
+      font-weight: 600;
+      margin-bottom: 1.5rem;
+      color: #06b6d4;
+      text-shadow: 0 0 8px #06b6d4aa;
+    }
+    a.login-btn {
+      background: #3b82f6;
+      color: white;
+      font-weight: 600;
+      padding: 0.75rem 2.5rem;
+      border-radius: 9999px;
+      text-decoration: none;
+      box-shadow: 0 6px 15px #3b82f6aa;
+      transition: background-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
+      user-select: none;
+    }
+    a.login-btn:hover, a.login-btn:focus {
+      background: #8b5cf6;
+      box-shadow: 0 8px 25px #8b5cf6bb;
+      transform: scale(1.05);
+      outline: none;
+    }
+  </style>
+</head>
+<body>
+  <h2>Please log in with Discord to see your commissions</h2>
+  <a href="/order-tracker/login" class="login-btn" aria-label="Login with Discord">Login with Discord</a>
+</body>
+</html>
+    `);
+  }
+
+
+  const commissions = await Commission.find({ userId: req.session.user.id }).lean();
+
+  let listHTML = '';
+  if (!commissions.length) {
+    listHTML = '<p>You have no commissions yet.</p>';
+  } else {
+    listHTML = '<ul>';
+    commissions.forEach(c => {
+      let updatesHTML = '';
+      if (c.updates && c.updates.length) {
+        updatesHTML += '<ul>';
+        c.updates.filter(u => u.visible).forEach(u => {
+          updatesHTML += `<li>
+            ${u.showPercent ? `<strong>Progress: ${u.progressPercent}%</strong><br>` : ''}
+            ${escapeHTML(u.text)}<br>
+            <small>${new Date(u.date).toLocaleString()}</small>
+            ${u.image ? `<br><img src="${escapeHTML(u.image)}" alt="Update image" style="max-width:300px;">` : ''}
+          </li>`;
+        });
+        updatesHTML += '</ul>';
+      }
+      listHTML += `
+        <li>
+          <strong>Description:</strong> ${escapeHTML(c.description)}<br>
+          <strong>Status:</strong> ${escapeHTML(c.status)}<br>
+          <small>Created: ${new Date(c.createdAt).toLocaleString()}</small>
+          ${updatesHTML}
+        </li>`;
+    });
+    listHTML += '</ul>';
+  }
+
+//   res.send(`
+//     <html>
+//       <head>
+//         <title>Your Commissions</title>
+//         <style>
+//           body {
+//             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+//             padding: 2rem;
+//             background: #fff;
+//             color: #333;
+//             max-width: 700px;
+//             margin: auto;
+//           }
+//           h1, h2 {
+//             text-align: center;
+//           }
+//           a, button {
+//             background: #4a90e2;
+//             color: white;
+//             border: none;
+//             padding: 0.5rem 1rem;
+//             margin: 0.5rem 0;
+//             border-radius: 4px;
+//             cursor: pointer;
+//             text-decoration: none;
+//             display: inline-block;
+//             font-weight: 600;
+//           }
+//           a:hover, button:hover {
+//             background: #357ABD;
+//           }
+//           ul {
+//             list-style: none;
+//             padding-left: 0;
+//           }
+//           li {
+//             margin-bottom: 1rem;
+//             padding: 1rem;
+//             border: 1px solid #ddd;
+//             border-radius: 6px;
+//           }
+//           img {
+//             margin-top: 0.5rem;
+//             border-radius: 6px;
+//           }
+//           form {
+//             text-align: center;
+//           }
+//         </style>
+//       </head>
+//       <body>
+//         <h1>Welcome, ${escapeHTML(req.session.user.username)}#${escapeHTML(req.session.user.discriminator)}</h1>
+//         <h2>Your Commissions</h2>
+//         ${listHTML}
+//         <p style="text-align:center;">
+//           <a href="https://discord.com/users/${DISCORD_USER_ID}" target="_blank" rel="noopener noreferrer">Request a Commission</a>
+//         </p>
+//         <form method="POST" action="/order-tracker/logout" style="text-align:center;">
+//           <button type="submit">Sign Out</button>
+//         </form>
+// ${ADMIN_DISCORD_ID.includes(req.session.user.id) ? `<a href="/order-tracker/admin">Admin Panel</a>` : ''}
+//       </body>
+//     </html>
+//   `);
+
+// res.send(`
+// <!DOCTYPE html>
+// <html lang="en">
+// <head>
+//   <meta charset="UTF-8" />
+//   <meta name="viewport" content="width=device-width, initial-scale=1" />
+//   <title>Your Commissions - Order Tracker</title>
+//   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+//   <style>
+//     /* Reset and base */
+//     *, *::before, *::after {
+//       box-sizing: border-box;
+//     }
+//     body {
+//       margin: 0; padding: 0;
+//       font-family: 'Inter', sans-serif;
+//       background: linear-gradient(135deg, #121212, #1a1a1a);
+//       color: #ddd;
+//       min-height: 100vh;
+//       display: flex;
+//       flex-direction: column;
+//       align-items: center;
+//       padding: 2rem 1rem;
+//     }
+//     h1, h2 {
+//       font-weight: 700;
+//       color: #06b6d4; /* cyan accent */
+//       margin-bottom: 0.5rem;
+//       text-align: center;
+//       text-shadow: 0 0 6px #06b6d4aa;
+//     }
+//     h2 {
+//       font-size: 1.8rem;
+//     }
+//     a {
+//       color: #3b82f6; /* electric blue */
+//       text-decoration: none;
+//       font-weight: 600;
+//       transition: color 0.3s ease;
+//     }
+//     a:hover, a:focus {
+//       color: #8b5cf6; /* purple */
+//       outline: none;
+//       text-decoration: underline;
+//     }
+//     .container {
+//       max-width: 720px;
+//       width: 100%;
+//       background: #222;
+//       border-radius: 12px;
+//       box-shadow: 0 0 12px #06b6d4aa;
+//       padding: 2rem;
+//       margin-top: 1rem;
+//     }
+//     ul.commissions-list {
+//       list-style: none;
+//       padding-left: 0;
+//       margin: 0;
+//     }
+//     ul.commissions-list li {
+//       background: #1f1f1f;
+//       border-radius: 10px;
+//       padding: 1.25rem 1.5rem;
+//       margin-bottom: 1.25rem;
+//       box-shadow: 0 0 6px #3b82f6aa;
+//       transition: transform 0.2s ease, box-shadow 0.2s ease;
+//       cursor: default;
+//     }
+//     ul.commissions-list li:hover, ul.commissions-list li:focus-within {
+//       transform: translateY(-4px);
+//       box-shadow: 0 0 15px #8b5cf6bb;
+//       outline: none;
+//     }
+//     ul.commissions-list li strong {
+//       display: inline-block;
+//       color: #06b6d4;
+//       margin-bottom: 0.3rem;
+//       font-weight: 600;
+//     }
+//     ul.commissions-list li small {
+//       color: #888;
+//       font-size: 0.85rem;
+//       display: block;
+//       margin-top: 0.5rem;
+//     }
+//     img.update-image {
+//       margin-top: 0.75rem;
+//       border-radius: 8px;
+//       max-width: 100%;
+//       filter: drop-shadow(0 0 3px #06b6d4aa);
+//     }
+//     .update-list {
+//       margin-top: 0.8rem;
+//       padding-left: 1rem;
+//       border-left: 2px solid #3b82f6;
+//       color: #aaa;
+//     }
+//     .update-list li {
+//       margin-bottom: 0.8rem;
+//       font-size: 0.95rem;
+//       line-height: 1.3;
+//       color: #bbb;
+//     }
+//     .update-list li strong {
+//       color: #8b5cf6;
+//       font-weight: 700;
+//       display: block;
+//       margin-bottom: 0.2rem;
+//     }
+//     .btn {
+//       display: inline-block;
+//       background: #3b82f6;
+//       color: white;
+//       font-weight: 600;
+//       border: none;
+//       padding: 0.75rem 2.5rem;
+//       border-radius: 9999px;
+//       cursor: pointer;
+//       text-decoration: none;
+//       text-align: center;
+//       box-shadow: 0 6px 15px #3b82f6aa;
+//       transition: background-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
+//       user-select: none;
+//       margin-top: 2rem;
+//       margin-bottom: 1.5rem;
+//     }
+//     .btn:hover, .btn:focus {
+//       background: #8b5cf6;
+//       box-shadow: 0 8px 25px #8b5cf6bb;
+//       transform: scale(1.05);
+//       outline: none;
+//     }
+//     form.logout-form {
+//       text-align: center;
+//       margin-top: 1rem;
+//     }
+//     button.logout-btn {
+//       background: #e55353;
+//       padding: 0.5rem 1.8rem;
+//       font-weight: 600;
+//       border-radius: 9999px;
+//       border: none;
+//       cursor: pointer;
+//       box-shadow: 0 4px 10px #e5535366;
+//       transition: background-color 0.3s ease, box-shadow 0.3s ease, transform 0.2s ease;
+//     }
+//     button.logout-btn:hover, button.logout-btn:focus {
+//       background: #b33b3b;
+//       box-shadow: 0 6px 18px #b33b3b99;
+//       transform: scale(1.05);
+//       outline: none;
+//     }
+//     .admin-link {
+//       display: block;
+//       margin-top: 1.5rem;
+//       text-align: center;
+//       font-weight: 600;
+//       color: #06b6d4;
+//       text-decoration: underline;
+//     }
+//     .admin-link:hover, .admin-link:focus {
+//       color: #8b5cf6;
+//       outline: none;
+//     }
+//   </style>
+// </head>
+// <body>
+//   <h1>Welcome, ${escapeHTML(req.session.user.username)}#${escapeHTML(req.session.user.discriminator)}</h1>
+//   <h2>Your Commissions</h2>
+//   <div class="container">
+//     ${
+//       commissions.length === 0
+//         ? '<p style="text-align:center; color:#666;">You have no commissions yet.</p>'
+//         : `<ul class="commissions-list">
+//             ${commissions
+//               .map(
+//                 (c) => `
+//               <li tabindex="0" aria-label="Commission: ${escapeHTML(c.description)} status ${escapeHTML(c.status)}">
+//                 <strong>Description:</strong> ${escapeHTML(c.description)}<br>
+//                 <strong>Status:</strong> ${escapeHTML(c.status)}<br>
+//                 <small>Created: ${new Date(c.createdAt).toLocaleString()}</small>
+//                 ${
+//                   c.updates && c.updates.length
+//                     ? `<ul class="update-list" aria-label="Visible updates">
+//                         ${c.updates
+//                           .filter((u) => u.visible)
+//                           .map(
+//                             (u) => `
+//                           <li>
+//                             ${u.showPercent ? `<strong>Progress: ${u.progressPercent}%</strong>` : ''}
+//                             ${escapeHTML(u.text)}<br>
+//                             <small>${new Date(u.date).toLocaleString()}</small>
+//                             ${
+//                               u.image
+//                                 ? `<img src="${escapeHTML(u.image)}" alt="Update image" class="update-image" />`
+//                                 : ''
+//                             }
+//                           </li>
+//                         `
+//                           )
+//                           .join('')}
+//                       </ul>`
+//                     : ''
+//                 }
+//               </li>`
+//               )
+//               .join('')}
+//           </ul>`
+//     }
+//   </div>
+//   <a href="https://discord.com/users/${DISCORD_USER_ID}" target="_blank" rel="noopener noreferrer" class="btn" aria-label="Request a commission">Request a Commission</a>
+//   <form method="POST" action="/order-tracker/logout" class="logout-form">
+//     <button type="submit" class="logout-btn" aria-label="Sign out">Sign Out</button>
+//   </form>
+//   ${
+//     ADMIN_DISCORD_ID.includes(req.session.user.id)
+//       ? `<a href="/order-tracker/admin" class="admin-link" aria-label="Admin panel">Admin Panel</a>`
+//       : ''
+//   }
+// </body>
+// </html>
+// `);
+res.send(`
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Your Commissions - Order Tracker</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body {
+      margin: 0; padding: 0;
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(135deg, #121212, #1a1a1a);
+      color: #ddd;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem 1rem;
+    }
+    h1, h2 {
+      font-weight: 700;
+      color: #06b6d4;
+      margin-bottom: 0.5rem;
+      text-align: center;
+      text-shadow: 0 0 6px #06b6d4aa;
+    }
+    h2 { font-size: 1.8rem; }
+    a, button {
+      font-weight: 600;
+      border: none;
+      border-radius: 9999px;
+      cursor: pointer;
+      text-align: center;
+      user-select: none;
+      transition: background-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
+    }
+    a.btn {
+      display: inline-block;
+      background: #3b82f6;
+      color: white;
+      padding: 0.75rem 2.5rem;
+      box-shadow: 0 6px 15px #3b82f6aa;
+      text-decoration: none;
+      margin-top: 2rem;
+      margin-bottom: 1.5rem;
+    }
+    a.btn:hover, a.btn:focus {
+      background: #8b5cf6;
+      box-shadow: 0 8px 25px #8b5cf6bb;
+      transform: scale(1.05);
+      outline: none;
+    }
+    form.logout-form {
+      text-align: center;
+      margin-top: 1rem;
+    }
+    button.logout-btn {
+      background: #e55353;
+      padding: 0.5rem 1.8rem;
+      color: white;
+      font-weight: 600;
+      box-shadow: 0 4px 10px #e5535366;
+    }
+    button.logout-btn:hover, button.logout-btn:focus {
+      background: #b33b3b;
+      box-shadow: 0 6px 18px #b33b3b99;
+      transform: scale(1.05);
+      outline: none;
+    }
+    .container {
+      max-width: 720px;
+      width: 100%;
+      background: #222;
+      border-radius: 12px;
+      box-shadow: 0 0 12px #06b6d4aa;
+      padding: 2rem;
+      margin-top: 1rem;
+    }
+    ul.commissions-list {
+      list-style: none;
+      padding-left: 0;
+      margin: 0;
+    }
+    ul.commissions-list li {
+      background: #1f1f1f;
+      border-radius: 10px;
+      padding: 1.25rem 1.5rem;
+      margin-bottom: 1.25rem;
+      box-shadow: 0 0 6px #3b82f6aa;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      cursor: default;
+    }
+    ul.commissions-list li:hover, ul.commissions-list li:focus-within {
+      transform: translateY(-4px);
+      box-shadow: 0 0 15px #8b5cf6bb;
+      outline: none;
+    }
+    ul.commissions-list li strong {
+      display: inline-block;
+      color: #06b6d4;
+      margin-bottom: 0.3rem;
+      font-weight: 600;
+    }
+    ul.commissions-list li small {
+      color: #888;
+      font-size: 0.85rem;
+      display: block;
+      margin-top: 0.5rem;
+    }
+    img.update-image {
+      margin-top: 0.75rem;
+      border-radius: 8px;
+      max-width: 100%;
+      filter: drop-shadow(0 0 3px #06b6d4aa);
+    }
+    .update-list {
+      margin-top: 0.8rem;
+      padding-left: 1rem;
+      border-left: 2px solid #3b82f6;
+      color: #aaa;
+    }
+    .update-list li {
+      margin-bottom: 0.8rem;
+      font-size: 0.95rem;
+      line-height: 1.3;
+      color: #bbb;
+    }
+    .update-list li strong {
+      color: #8b5cf6;
+      font-weight: 700;
+      display: block;
+      margin-bottom: 0.2rem;
+    }
+    .admin-link {
+      display: block;
+      margin-top: 1.5rem;
+      text-align: center;
+      font-weight: 600;
+      color: #06b6d4;
+      text-decoration: underline;
+    }
+    .admin-link:hover, .admin-link:focus {
+      color: #8b5cf6;
+      outline: none;
+    }
+    p.no-commissions {
+      text-align: center;
+      color: #666;
+      font-style: italic;
+    }
+  </style>
+</head>
+<body>
+  <h1>Welcome, ${escapeHTML(req.session.user.username)}#${escapeHTML(req.session.user.discriminator)}</h1>
+  <h2>Your Commissions</h2>
+  <div class="container">
+    ${
+      commissions.length === 0
+        ? '<p class="no-commissions">You have no commissions yet.</p>'
+        : `<ul class="commissions-list">
+            ${commissions
+              .map(
+                (c) => `
+              <li tabindex="0" aria-label="Commission: ${escapeHTML(c.description)} status ${escapeHTML(c.status)}">
+                <strong>Description:</strong> ${escapeHTML(c.description)}<br>
+                <strong>Status:</strong> ${escapeHTML(c.status)}<br>
+                <small>Created: ${new Date(c.createdAt).toLocaleString()}</small>
+                ${
+                  c.updates && c.updates.length
+                    ? `<ul class="update-list" aria-label="Visible updates">
+                        ${c.updates
+                          .filter((u) => u.visible)
+                          .map(
+                            (u) => `
+                          <li>
+                            ${u.showPercent ? `<strong>Progress: ${u.progressPercent}%</strong>` : ''}
+                            ${escapeHTML(u.text)}<br>
+                            <small>${new Date(u.date).toLocaleString()}</small>
+                            ${
+                              u.image
+                                ? `<img src="${escapeHTML(u.image)}" alt="Update image" class="update-image" />`
+                                : ''
+                            }
+                          </li>
+                        `
+                          )
+                          .join('')}
+                      </ul>`
+                    : ''
+                }
+              </li>`
+              )
+              .join('')}
+          </ul>`
+    }
+  </div>
+  <a href="https://discord.com/users/${DISCORD_USER_ID}" target="_blank" rel="noopener noreferrer" class="btn" aria-label="Request a commission">Request a Commission</a>
+  <form method="POST" action="/order-tracker/logout" class="logout-form">
+    <button type="submit" class="logout-btn" aria-label="Sign out">Sign Out</button>
+  </form>
+  ${
+    ADMIN_DISCORD_ID.includes(req.session.user.id)
+      ? `<a href="/order-tracker/admin" class="admin-link" aria-label="Admin panel">Admin Panel</a>`
+      : ''
+  }
+</body>
+</html>
+`);
+});
+
+// Admin panel - list commissions and updates
+// app.get('/order-tracker/admin', isAdmin, async (req, res) => {
+//   const commissions = await Commission.find().lean();
+
+//   let rowsHTML = '';
+//   commissions.forEach(c => {
+//     let updatesHTML = '';
+//     if (c.updates && c.updates.length) {
+//       updatesHTML += '<ul>';
+//       c.updates.forEach((u, i) => {
+//         updatesHTML += `<li>
+//           <strong>${new Date(u.date).toLocaleString()}:</strong> ${escapeHTML(u.text)} 
+//           (${u.showPercent ? u.progressPercent + '%' : 'percent hidden'}) 
+//           ${u.visible ? '[Visible]' : '[Hidden]'}
+//           ${u.image ? `<br><img src="${escapeHTML(u.image)}" alt="Update image" style="max-width:150px; margin-top:0.3rem;">` : ''}
+//           <form method="POST" action="/order-tracker/admin/update/toggle-visibility" style="display:inline;">
+//             <input type="hidden" name="commissionId" value="${c._id}" />
+//             <input type="hidden" name="updateIndex" value="${i}" />
+//             <button type="submit">${u.visible ? 'Hide' : 'Show'}</button>
+//           </form>
+//           <form method="POST" action="/order-tracker/admin/update/toggle-percent" style="display:inline;">
+//             <input type="hidden" name="commissionId" value="${c._id}" />
+//             <input type="hidden" name="updateIndex" value="${i}" />
+//             <button type="submit">${u.showPercent ? 'Hide %' : 'Show %'}</button>
+//           </form>
+//           <form method="POST" action="/order-tracker/admin/update/delete" style="display:inline;">
+//             <input type="hidden" name="commissionId" value="${c._id}" />
+//             <input type="hidden" name="updateIndex" value="${i}" />
+//             <button type="submit" style="background:#e55353; color:white;">Delete</button>
+//           </form>
+//         </li>`;
+//       });
+//       updatesHTML += '</ul>';
+//     } else {
+//       updatesHTML = '<p>No updates yet.</p>';
+//     }
+
+//     rowsHTML += `
+//       <tr>
+//         <td>${escapeHTML(c.userId)}</td>
+//         <td>${escapeHTML(c.description)}</td>
+//         <td>${escapeHTML(c.status)}</td>
+//         <td>${new Date(c.createdAt).toLocaleString()}</td>
+//         <td>${c.updatedAt ? new Date(c.updatedAt).toLocaleString() : ''}</td>
+//         <td>
+//           <form method="POST" action="/order-tracker/admin/edit" style="margin-bottom:0.5rem;">
+//             <input type="hidden" name="id" value="${c._id}" />
+//             <input type="text" name="description" value="${escapeHTML(c.description)}" required />
+//             <select name="status">
+//               <option value="pending" ${c.status === 'pending' ? 'selected' : ''}>Pending</option>
+//               <option value="in progress" ${c.status === 'in progress' ? 'selected' : ''}>In Progress</option>
+//               <option value="completed" ${c.status === 'completed' ? 'selected' : ''}>Completed</option>
+//               <option value="cancelled" ${c.status === 'cancelled' ? 'selected' : ''}>Cancelled</option>
+//             </select>
+//             <button type="submit">Update</button>
+//           </form>
+//           <form method="POST" action="/order-tracker/admin/delete" onsubmit="return confirm('Delete this commission?');">
+//             <input type="hidden" name="id" value="${c._id}" />
+//             <button type="submit" style="background:#e55353; color:white;">Delete</button>
+//           </form>
+//           <strong>Updates:</strong> ${updatesHTML}
+//           <form method="POST" action="/order-tracker/admin/update/add" enctype="multipart/form-data" style="margin-top:1rem;">
+//             <input type="hidden" name="commissionId" value="${c._id}" />
+//             <textarea name="text" placeholder="Update text" required style="width:100%; height:60px;"></textarea><br>
+//             <label>Progress %: <input type="number" name="progressPercent" min="0" max="100" value="0" /></label>
+//             <label><input type="checkbox" name="visible" /> Visible</label><br>
+//             <label>PNG image (optional): <input type="file" name="image" accept="image/png" /></label><br>
+//             <button type="submit">Add Update</button>
+//           </form>
+//         </td>
+//       </tr>
+//     `;
+//   });
+
+//   res.send(`
+//     <html>
+//       <head>
+//         <title>Admin Panel - Manage Commissions</title>
+//         <style>
+//           body {
+//             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+//             padding: 2rem;
+//             max-width: 1000px;
+//             margin: auto;
+//             background: #fff;
+//             color: #333;
+//           }
+//           table {
+//             width: 100%;
+//             border-collapse: collapse;
+//             margin-bottom: 2rem;
+//           }
+//           th, td {
+//             border: 1px solid #ddd;
+//             padding: 0.5rem;
+//             vertical-align: top;
+//           }
+//           th {
+//             background: #4a90e2;
+//             color: white;
+//           }
+//           textarea {
+//             font-family: inherit;
+//             font-size: 1rem;
+//           }
+//           input[type=text], select, input[type=number] {
+//             font-family: inherit;
+//             font-size: 1rem;
+//             margin: 0.2rem 0.5rem 0.2rem 0;
+//           }
+//           button {
+//             background: #4a90e2;
+//             border: none;
+//             color: white;
+//             padding: 0.3rem 0.8rem;
+//             cursor: pointer;
+//             border-radius: 4px;
+//             font-weight: 600;
+//           }
+//           button:hover {
+//             background: #357ABD;
+//           }
+//           form {
+//             margin-bottom: 0.5rem;
+//           }
+//           img {
+//             border-radius: 4px;
+//             margin-top: 0.3rem;
+//           }
+//         </style>
+//       </head>
+//       <body>
+//         <h1>Admin Panel - Manage Commissions</h1>
+//         <table>
+//           <thead>
+//             <tr>
+//               <th>User ID</th>
+//               <th>Description</th>
+//               <th>Status</th>
+//               <th>Created At</th>
+//               <th>Updated At</th>
+//               <th>Actions & Updates</th>
+//             </tr>
+//           </thead>
+//           <tbody>
+//             ${rowsHTML}
+//           </tbody>
+//         </table>
+//         <h2>Add New Commission</h2>
+//         <form method="POST" action="/order-tracker/admin/add" style="max-width: 500px;">
+//           <label>User Discord ID: <input name="userId" required /></label><br><br>
+//           <label>Description: <input name="description" required /></label><br><br>
+//           <label>Status:
+//             <select name="status">
+//               <option value="pending" selected>Pending</option>
+//               <option value="in progress">In Progress</option>
+//               <option value="completed">Completed</option>
+//               <option value="cancelled">Cancelled</option>
+//             </select>
+//           </label><br><br>
+//           <button type="submit">Add Commission</button>
+//         </form>
+//         <p><a href="/order-tracker">← Back to Dashboard</a></p>
+//       </body>
+//     </html>
+//   `);
+// });
+// Admin panel - list commissions and updates
 app.get('/order-tracker/admin', isAdmin, async (req, res) => {
   const commissions = await Commission.find().lean();
 
-  let commissionRows = commissions.map(c => {
+  function escapeHTML(text) {
+    if (!text) return '';
+    return text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
+  // Helper to truncate description in summary (max 50 chars)
+  function truncate(text, max = 50) {
+    if (!text) return '';
+    return text.length > max ? text.slice(0, max) + '...' : text;
+  }
+
+  let rowsHTML = '';
+  commissions.forEach((c, index) => {
     let updatesHTML = '';
     if (c.updates && c.updates.length) {
-      updatesHTML += '<ul style="padding-left: 1rem; max-height:150px; overflow-y:auto; border:1px solid #ccc; margin-top:0.5rem;">';
+      updatesHTML += '<ul style="padding-left:1rem; max-height: 200px; overflow-y:auto; margin:0;">';
       c.updates.forEach((u, i) => {
-        updatesHTML += `
-        <li style="margin-bottom:0.3rem;">
-          <strong>${new Date(u.date).toLocaleString()}:</strong> 
-          ${escapeHTML(u.text)} 
-          (${u.showPercent ? u.progressPercent + '%' : '(percent hidden)'})
-          ${u.image ? `<br/><img src="${escapeHTML(u.image)}" alt="Update image" style="max-width:150px; margin-top:0.25rem; border-radius:4px;"/>` : ''}
+        updatesHTML += `<li style="margin-bottom:0.5rem;">
+          <strong>${new Date(u.date).toLocaleString()}:</strong> ${escapeHTML(u.text)} 
+          (${u.showPercent ? u.progressPercent + '%' : 'percent hidden'}) 
+          ${u.visible ? '[Visible]' : '[Hidden]'}
+          ${u.image ? `<br><img src="${escapeHTML(u.image)}" alt="Update image" style="max-width:150px; margin-top:0.3rem; border-radius:8px; filter: drop-shadow(0 0 5px #06b6d4bb);" />` : ''}
           <form method="POST" action="/order-tracker/admin/update/toggle-visibility" style="display:inline;">
             <input type="hidden" name="commissionId" value="${c._id}" />
             <input type="hidden" name="updateIndex" value="${i}" />
-            <button type="submit" style="font-size: 0.7rem; margin-left: 10px;">
-              ${u.visible ? 'Hide' : 'Show'}
-            </button>
+            <button type="submit" style="margin: 0 0.3rem; padding: 0.3rem 0.7rem; border-radius: 6px; border:none; cursor:pointer; background:#3b82f6; color:#fff; font-weight:600;">${u.visible ? 'Hide' : 'Show'}</button>
           </form>
           <form method="POST" action="/order-tracker/admin/update/toggle-percent" style="display:inline;">
             <input type="hidden" name="commissionId" value="${c._id}" />
             <input type="hidden" name="updateIndex" value="${i}" />
-            <button type="submit" style="font-size: 0.7rem; margin-left: 5px;">
-              ${u.showPercent ? 'Hide %' : 'Show %'}
-            </button>
+            <button type="submit" style="margin: 0 0.3rem; padding: 0.3rem 0.7rem; border-radius: 6px; border:none; cursor:pointer; background:#8b5cf6; color:#fff; font-weight:600;">${u.showPercent ? 'Hide %' : 'Show %'}</button>
           </form>
           <form method="POST" action="/order-tracker/admin/update/delete" style="display:inline;">
             <input type="hidden" name="commissionId" value="${c._id}" />
             <input type="hidden" name="updateIndex" value="${i}" />
-            <button type="submit" style="font-size: 0.7rem; margin-left: 5px; background:#e55353; color:white; border:none; border-radius:3px;">
-              Delete
-            </button>
+            <button type="submit" style="margin: 0 0.3rem; padding: 0.3rem 0.7rem; border-radius: 6px; border:none; cursor:pointer; background:#e55353; color:#fff; font-weight:600;">Delete</button>
           </form>
         </li>`;
       });
       updatesHTML += '</ul>';
     } else {
-      updatesHTML = '<small>No updates yet</small>';
+      updatesHTML = '<p style="color:#888; font-style: italic;">No updates yet.</p>';
     }
 
-    // Add update form with file upload
-    const updateForm = `
-    <form method="POST" action="/order-tracker/admin/update/add" enctype="multipart/form-data" style="margin-top: 0.5rem;">
-      <input type="hidden" name="commissionId" value="${c._id}" />
-      <textarea name="text" required placeholder="Update text" rows="2" style="width:100%;"></textarea><br/>
-      <label>Progress %: <input type="number" name="progressPercent" min="0" max="100" value="0" style="width:60px;" /></label>
-      <label style="margin-left: 1rem;"><input type="checkbox" name="visible" /> Visible to user</label><br/>
-      <label>Upload PNG Image (optional):<br/>
-        <input type="file" name="image" accept="image/png" />
-      </label><br/>
-      <button type="submit" style="margin-top: 0.3rem;">Add Update</button>
-    </form>`;
+    rowsHTML += `
+      <!-- Summary row, clickable -->
+      <tr class="summary-row" data-index="${index}" style="cursor:pointer; user-select:none; background:#1e1e1e;">
+        <td style="font-family: monospace; color:#06b6d4; max-width: 130px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHTML(c.userId)}</td>
+        <td title="${escapeHTML(c.description)}" style="max-width: 350px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${truncate(c.description)}</td>
+        <td style="text-transform: capitalize; max-width: 120px;">${escapeHTML(c.status)}</td>
+        <td style="max-width: 170px;">${new Date(c.createdAt).toLocaleString()}</td>
+        <td style="max-width: 170px;">${c.updatedAt ? new Date(c.updatedAt).toLocaleString() : ''}</td>
+        <td>
+          <button class="toggle-details-btn" aria-label="Toggle commission details" style="background:#06b6d4; color:#111; padding:0.3rem 0.7rem; border:none; border-radius:6px; font-weight:700; cursor:pointer;">Details</button>
+        </td>
+      </tr>
 
-    return `
-    <tr>
-      <td>${escapeHTML(c.userId)}</td>
-      <td>${escapeHTML(c.description)}</td>
-      <td>${escapeHTML(c.status)}</td>
-      <td>${new Date(c.createdAt).toLocaleString()}</td>
-      <td>${c.updatedAt ? new Date(c.updatedAt).toLocaleString() : ''}</td>
-      <td>
-        <form action="/order-tracker/admin/edit" method="POST" style="display:inline-block;">
-          <input type="hidden" name="id" value="${c._id}" />
-          <input type="text" name="description" value="${escapeHTML(c.description)}" required />
-          <select name="status">
-            <option value="pending" ${c.status === 'pending' ? 'selected' : ''}>Pending</option>
-            <option value="in progress" ${c.status === 'in progress' ? 'selected' : ''}>In Progress</option>
-            <option value="completed" ${c.status === 'completed' ? 'selected' : ''}>Completed</option>
-            <option value="cancelled" ${c.status === 'cancelled' ? 'selected' : ''}>Cancelled</option>
-          </select>
-          <button type="submit">Update</button>
-        </form>
-        <form action="/order-tracker/admin/delete" method="POST" onsubmit="return confirm('Are you sure you want to delete this commission?');" style="display:inline-block;">
-          <input type="hidden" name="id" value="${c._id}" />
-          <button type="submit" style="background:#e55353;">Delete</button>
-        </form>
-        <br/>
-        <strong>Updates:</strong>
-        ${updatesHTML}
-        ${updateForm}
-      </td>
-    </tr>`;
-  }).join('');
+      <!-- Details row, hidden by default -->
+      <tr class="details-row" data-index="${index}" style="display:none; background:#292929;">
+        <td colspan="6" style="padding:1rem;">
+          <form method="POST" action="/order-tracker/admin/edit" style="margin-bottom:1rem; display:flex; flex-wrap: wrap; gap:0.5rem; align-items:center;">
+            <input type="hidden" name="id" value="${c._id}" />
+            <input type="text" name="description" value="${escapeHTML(c.description)}" required style="flex:1; padding:0.4rem; border-radius:6px; border:none;" />
+            <select name="status" style="padding:0.4rem; border-radius:6px; border:none; max-width: 160px;">
+              <option value="pending" ${c.status === 'pending' ? 'selected' : ''}>Pending</option>
+              <option value="in progress" ${c.status === 'in progress' ? 'selected' : ''}>In Progress</option>
+              <option value="completed" ${c.status === 'completed' ? 'selected' : ''}>Completed</option>
+              <option value="cancelled" ${c.status === 'cancelled' ? 'selected' : ''}>Cancelled</option>
+            </select>
+            <button type="submit" style="background:#3b82f6; color:#fff; padding:0.4rem 1rem; border-radius:6px; font-weight:600; cursor:pointer; border:none;">Update</button>
+          </form>
+
+          <!-- Moved delete form outside the edit form -->
+          <form method="POST" action="/order-tracker/admin/delete" onsubmit="return confirm('Delete this commission?');" style="margin-top: 0.5rem;">
+            <input type="hidden" name="id" value="${c._id}" />
+            <button type="submit" style="background:#e55353; color:#fff; padding:0.4rem 1rem; border-radius:6px; font-weight:600; cursor:pointer; border:none;">Delete Commission</button>
+          </form>
+
+          <hr style="border-color: #444; margin: 1rem 0;" />
+
+          <strong style="color:#06b6d4;">Updates:</strong>
+          ${updatesHTML}
+
+          <form method="POST" action="/order-tracker/admin/update/add" enctype="multipart/form-data" style="margin-top:1rem; display:flex; flex-direction: column; gap:0.6rem;">
+            <input type="hidden" name="commissionId" value="${c._id}" />
+            <textarea name="text" placeholder="Update text" required style="resize:none; padding:0.6rem; border-radius:8px; border:none; min-height:60px; font-family: 'Inter', sans-serif;"></textarea>
+            <div style="display:flex; align-items:center; gap:1rem;">
+              <label style="color:#ddd; user-select:none;">
+                Progress %:
+                <input type="number" name="progressPercent" min="0" max="100" value="0" style="width:70px; padding:0.3rem; border-radius:6px; border:none;" />
+              </label>
+              <label style="color:#ddd; user-select:none;">
+                <input type="checkbox" name="visible" /> Visible
+              </label>
+            </div>
+            <label style="color:#ddd; user-select:none;">
+              PNG image (optional):
+              <input type="file" name="image" accept="image/png" style="margin-top:0.2rem;" />
+            </label>
+            <button type="submit" style="background:#3b82f6; color:#fff; padding:0.5rem 1rem; border-radius:9999px; font-weight:700; cursor:pointer; border:none; align-self:flex-start; width: max-content;">
+              Add Update
+            </button>
+          </form>
+        </td>
+      </tr>
+    `;
+  });
 
   res.send(`
-        <!DOCTYPE html>
-        <html lang="en">
-        <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <title>Admin Panel - Manage Commissions</title>
-        <style>
-        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin Panel - Manage Commissions</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(135deg, #121212, #1a1a1a);
+      color: #ddd;
+      min-height: 100vh;
+      padding: 2rem 1rem;
+      max-width: 1200px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    h1 {
+      text-align: center;
+      font-weight: 700;
+      color: #06b6d4;
+      text-shadow: 0 0 8px #06b6d4bb;
+      margin-bottom: 2rem;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #222;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 0 15px #06b6d4aa;
+      margin-bottom: 2rem;
+    }
+    th, td {
+      padding: 1rem;
+      text-align: left;
+      vertical-align: top;
+      border-bottom: 1px solid #333;
+      max-width: 1px; /* To enable ellipsis */
+    }
+    th {
+      background: #3b82f6;
+      color: white;
+      font-weight: 700;
+      user-select: none;
+    }
+    tbody tr:hover {
+      background: #2a2a2a;
+    }
+    a {
+      color: #3b82f6;
+      text-decoration: none;
+      font-weight: 600;
+    }
+    a:hover, a:focus {
+      color: #8b5cf6;
+      outline: none;
+      text-decoration: underline;
+    }
+    form {
+      margin: 0;
+    }
+    button {
+      transition: background-color 0.25s ease;
+    }
+    button:hover {
+      filter: brightness(1.15);
+    }
+    /* Scroll for wide tables on small screens */
+    @media (max-width: 768px) {
+      table {
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>Admin Panel - Manage Commissions</h1>
+  <table aria-label="List of commissions">
+    <thead>
+      <tr>
+        <th>User ID</th>
+        <th>Description</th>
+        <th>Status</th>
+        <th>Created At</th>
+        <th>Updated At</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${rowsHTML}
+    </tbody>
+  </table>
 
-        body {
-            font-family: 'Poppins', sans-serif;
-            max-width: 1100px;
-            margin: 2rem auto;
-            background: #f4f6fc;
-            padding: 2rem;
-            border-radius: 12px;
-            color: #222;
+  <h2 style="color:#06b6d4; text-align:center; margin-bottom: 1rem;">Add New Commission</h2>
+  <form method="POST" action="/order-tracker/admin/add" style="max-width: 600px; margin: auto; background:#222; padding:1.5rem; border-radius: 12px; box-shadow: 0 0 12px #06b6d4aa;">
+    <label style="display:block; margin-bottom: 0.6rem; font-weight:600;">
+      User Discord ID:
+      <input name="userId" required style="width: 100%; padding: 0.5rem; border-radius: 8px; border:none; margin-top:0.3rem; font-family: 'Inter', sans-serif;" />
+    </label>
+    <label style="display:block; margin-bottom: 0.6rem; font-weight:600;">
+      Description:
+      <input name="description" required style="width: 100%; padding: 0.5rem; border-radius: 8px; border:none; margin-top:0.3rem; font-family: 'Inter', sans-serif;" />
+    </label>
+    <label style="display:block; margin-bottom: 1rem; font-weight:600;">
+      Status:
+      <select name="status" style="width: 100%; padding: 0.5rem; border-radius: 8px; border:none; margin-top:0.3rem; font-family: 'Inter', sans-serif;">
+        <option value="pending" selected>Pending</option>
+        <option value="in progress">In Progress</option>
+        <option value="completed">Completed</option>
+        <option value="cancelled">Cancelled</option>
+      </select>
+    </label>
+    <button type="submit" style="background:#3b82f6; color:#fff; padding: 0.75rem 2rem; border-radius: 9999px; font-weight: 700; border:none; cursor:pointer; display: block; margin: auto;">
+      Add Commission
+    </button>
+  </form>
+
+  <p style="text-align:center; margin-top: 2rem;">
+    <a href="/order-tracker" aria-label="Back to Dashboard" style="color:#06b6d4; font-weight:600; text-decoration: underline;">← Back to Dashboard</a>
+  </p>
+
+  <script>
+    // Toggle details row visibility on summary row or "Details" button click
+    document.querySelectorAll('tr.summary-row').forEach(row => {
+      row.addEventListener('click', e => {
+        // But if clicked directly on a button inside summary row (like Details button), do nothing here to avoid double toggle
+        if (e.target.tagName.toLowerCase() === 'button') return;
+
+        const index = row.getAttribute('data-index');
+        const detailsRow = document.querySelector('tr.details-row[data-index="' + index + '"]');
+        if (detailsRow.style.display === 'none' || detailsRow.style.display === '') {
+          detailsRow.style.display = 'table-row';
+          row.classList.add('open');
+        } else {
+          detailsRow.style.display = 'none';
+          row.classList.remove('open');
         }
+      });
+    });
 
-        h1 {
-            text-align: center;
-            font-weight: 700;
-            color: #5865F2;
-            margin-bottom: 2rem;
+    // Toggle details when clicking the "Details" button
+    document.querySelectorAll('tr.summary-row button.toggle-details-btn').forEach(button => {
+      button.addEventListener('click', e => {
+        e.stopPropagation(); // Prevent bubbling up to row click
+        const row = e.target.closest('tr.summary-row');
+        const index = row.getAttribute('data-index');
+        const detailsRow = document.querySelector('tr.details-row[data-index="' + index + '"]');
+        if (detailsRow.style.display === 'none' || detailsRow.style.display === '') {
+          detailsRow.style.display = 'table-row';
+          row.classList.add('open');
+        } else {
+          detailsRow.style.display = 'none';
+          row.classList.remove('open');
         }
+      });
+    });
 
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 2rem;
-        }
-
-        th, td {
-            padding: 0.6rem 0.9rem;
-            border-bottom: 1px solid #ddd;
-            text-align: left;
-            vertical-align: top;
-        }
-
-        th {
-            background: #5865F2;
-            color: white;
-            font-weight: 600;
-        }
-
-        tbody tr:hover {
-            background: #e3e8ff;
-        }
-
-        input[type="text"],
-        select,
-        textarea {
-            width: 95%;
-            padding: 0.4rem 0.6rem;
-            border-radius: 6px;
-            border: 1px solid #ccc;
-            font-size: 1rem;
-            font-family: 'Poppins', sans-serif;
-            resize: vertical;
-            box-sizing: border-box;
-        }
-
-        textarea {
-            min-height: 60px;
-        }
-
-        button {
-            background: #5865F2;
-            border: none;
-            color: white;
-            padding: 0.35rem 1rem;
-            font-weight: 700;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-            font-family: 'Poppins', sans-serif;
-        }
-
-        button:hover {
-            background: #4752c4;
-        }
-
-        button.delete {
-            background: #e55353;
-        }
-        button.delete:hover {
-            background: #b33030;
-        }
-
-        form {
-            margin-top: 0.5rem;
-        }
-
-        .update-list {
-            max-height: 140px;
-            overflow-y: auto;
-            border: 1px solid #ccc;
-            padding: 0.5rem;
-            border-radius: 6px;
-            background: white;
-        }
-
-        .update-item {
-            margin-bottom: 0.4rem;
-            font-size: 0.9rem;
-        }
-
-        .update-item img {
-            max-width: 120px;
-            margin-top: 0.2rem;
-            border-radius: 6px;
-        }
-
-        .update-actions button {
-            font-size: 0.75rem;
-            padding: 0.2rem 0.5rem;
-            margin-left: 6px;
-        }
-
-        .add-commission-form {
-            background: white;
-            padding: 1rem 1.5rem;
-            border-radius: 12px;
-            box-shadow: 0 6px 20px rgba(88,101,242,0.1);
-        }
-
-        .add-commission-form label {
-            display: block;
-            margin-bottom: 0.75rem;
-            font-weight: 600;
-        }
-
-        .add-commission-form input,
-        .add-commission-form select {
-            width: 100%;
-        }
-
-        a.back-link {
-            display: block;
-            text-align: center;
-            margin-top: 1.8rem;
-            font-weight: 600;
-            color: #5865F2;
-            text-decoration: none;
-            font-size: 1rem;
-        }
-        a.back-link:hover {
-            text-decoration: underline;
-        }
-
-        @media (max-width: 650px) {
-            table, thead, tbody, th, td, tr {
-            display: block;
-            }
-            thead tr {
-            position: absolute;
-            top: -9999px;
-            left: -9999px;
-            }
-            tr {
-            border: 1px solid #ccc;
-            margin-bottom: 1rem;
-            border-radius: 12px;
-            padding: 1rem;
-            background: white;
-            }
-            td {
-            border: none;
-            padding: 0.4rem 0;
-            position: relative;
-            padding-left: 50%;
-            }
-            td::before {
-            position: absolute;
-            top: 0.5rem;
-            left: 1rem;
-            width: 45%;
-            white-space: nowrap;
-            font-weight: 600;
-            color: #5865F2;
-            }
-            td:nth-of-type(1)::before { content: "User ID"; }
-            td:nth-of-type(2)::before { content: "Description"; }
-            td:nth-of-type(3)::before { content: "Status"; }
-            td:nth-of-type(4)::before { content: "Created At"; }
-            td:nth-of-type(5)::before { content: "Updated At"; }
-            td:nth-of-type(6)::before { content: "Actions & Updates"; }
-        }
-        </style>
-        </head>
-        <body>
-
-        <h1>Admin Panel - Manage Commissions</h1>
-
-        <table>
-        <thead>
-            <tr>
-            <th>User ID</th>
-            <th>Description</th>
-            <th>Status</th>
-            <th>Created At</th>
-            <th>Updated At</th>
-            <th>Actions & Updates</th>
-            </tr>
-        </thead>
-        <tbody>
-            ${commissionRows}
-        </tbody>
-        </table>
-
-        <section class="add-commission-form" aria-label="Add New Commission">
-        <h2>Add New Commission</h2>
-        <form method="POST" action="/order-tracker/admin/add">
-            <label for="userId">User Discord ID:</label>
-            <input id="userId" name="userId" required autocomplete="off" />
-            
-            <label for="description">Description:</label>
-            <input id="description" name="description" required autocomplete="off" />
-            
-            <label for="status">Status:</label>
-            <select id="status" name="status" required>
-            <option value="pending" selected>Pending</option>
-            <option value="in progress">In Progress</option>
-            <option value="completed">Completed</option>
-            <option value="cancelled">Cancelled</option>
-            </select>
-            <br /><br />
-            <button type="submit">Add Commission</button>
-        </form>
-        </section>
-
-        <a href="/order-tracker" class="back-link" aria-label="Back to Dashboard">← Back to Dashboard</a>
-
-        </body>
-        </html>
-        `);
-
+    // Prevent clicks inside details row from toggling the summary row
+    document.querySelectorAll('tr.details-row button, tr.details-row input, tr.details-row select, tr.details-row textarea, tr.details-row form').forEach(el => {
+      el.addEventListener('click', e => {
+        e.stopPropagation();
+      });
+    });
+  </script>
+</body>
+</html>
+  `);
 });
 
-// Add commission (admin)
+
+
+
+
+// POST routes for admin actions:
+
+// Add commission
 app.post('/order-tracker/admin/add', isAdmin, async (req, res) => {
   const { userId, description, status } = req.body;
   await Commission.create({ userId, description, status, updatedAt: new Date() });
   res.redirect('/order-tracker/admin');
 });
 
-// Edit commission (admin)
+// Edit commission
 app.post('/order-tracker/admin/edit', isAdmin, async (req, res) => {
   const { id, description, status } = req.body;
   await Commission.findByIdAndUpdate(id, { description, status, updatedAt: new Date() });
   res.redirect('/order-tracker/admin');
 });
 
-// Delete commission (admin)
+// Delete commission
 app.post('/order-tracker/admin/delete', isAdmin, async (req, res) => {
   const { id } = req.body;
   await Commission.findByIdAndDelete(id);
   res.redirect('/order-tracker/admin');
 });
 
-// Add update (admin) with file upload middleware
+// Add update (with image upload)
 app.post('/order-tracker/admin/update/add', isAdmin, upload.single('image'), async (req, res) => {
   const { commissionId, text, progressPercent, visible } = req.body;
   if (!commissionId || !text) return res.status(400).send('Missing required fields');
 
-  let imageFilename = null;
-  if (req.file) {
-    imageFilename = '/uploads/' + req.file.filename;
-  }
+  let imagePath = null;
+  if (req.file) imagePath = '/uploads/' + req.file.filename;
 
   const updateObj = {
     text,
@@ -762,7 +1227,7 @@ app.post('/order-tracker/admin/update/add', isAdmin, upload.single('image'), asy
     visible: visible === 'on',
     showPercent: true,
     date: new Date(),
-    image: imageFilename,
+    image: imagePath,
   };
 
   await Commission.findByIdAndUpdate(commissionId, {
@@ -824,11 +1289,11 @@ app.post('/order-tracker/admin/update/delete', isAdmin, async (req, res) => {
   res.redirect('/order-tracker/admin');
 });
 
-// DISCORD OAUTH LOGIN FLOW
-
+// Discord OAuth login flow (simplified)
 app.get('/order-tracker/login', (req, res) => {
-  const authorizeURL = `https://discord.com/api/oauth2/authorize?client_id=${DISCORD_CLIENT_ID}&redirect_uri=${encodeURIComponent(DISCORD_REDIRECT_URI)}&response_type=code&scope=identify`;
-  res.redirect(authorizeURL);
+  const scope = encodeURIComponent('identify');
+  const redirect = encodeURIComponent(DISCORD_REDIRECT_URI);
+  res.redirect(`https://discord.com/api/oauth2/authorize?client_id=${DISCORD_CLIENT_ID}&redirect_uri=${redirect}&response_type=code&scope=${scope}`);
 });
 
 app.get('/order-tracker/callback', async (req, res) => {
@@ -837,14 +1302,13 @@ app.get('/order-tracker/callback', async (req, res) => {
 
   try {
     // Exchange code for token
-    const tokenRes = await axios.post('https://discord.com/api/oauth2/token',
-      new URLSearchParams({
-        client_id: DISCORD_CLIENT_ID,
-        client_secret: DISCORD_CLIENT_SECRET,
-        grant_type: 'authorization_code',
-        code,
-        redirect_uri: DISCORD_REDIRECT_URI,
-      }), {
+    const tokenRes = await axios.post('https://discord.com/api/oauth2/token', new URLSearchParams({
+      client_id: DISCORD_CLIENT_ID,
+      client_secret: DISCORD_CLIENT_SECRET,
+      grant_type: 'authorization_code',
+      code,
+      redirect_uri: DISCORD_REDIRECT_URI,
+    }).toString(), {
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     });
 
@@ -859,28 +1323,24 @@ app.get('/order-tracker/callback', async (req, res) => {
       id: userRes.data.id,
       username: userRes.data.username,
       discriminator: userRes.data.discriminator,
+      avatar: userRes.data.avatar,
     };
 
     res.redirect('/order-tracker');
   } catch (err) {
     console.error(err);
-    res.status(500).send('OAuth error');
+    res.status(500).send('Login failed');
   }
 });
 
+// Logout route
 app.post('/order-tracker/logout', (req, res) => {
   req.session.destroy(() => {
-    res.redirect('/order-tracker');
+    res.redirect('/');
   });
 });
 
-// Make sure uploads folder exists
-const fs = require('fs');
-const uploadsDir = path.join(__dirname, 'public/uploads');
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
-}
-
+// Start server
 app.listen(PORT, () => {
-  console.log(`🚀 Server listening on port ${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });
