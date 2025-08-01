@@ -5,43 +5,85 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Example 2 — MM2 Shopify Bot</title>
   <style>
-    body { font-family: Arial, sans-serif; padding: 2rem; background: #f9fafb; color: #1f2937; max-width: 720px; margin: auto; }
-    h1 { color: #1e40af; }
-    a { color: #1e40af; text-decoration: none; }
-    a:hover { text-decoration: underline; }
-    ul { padding-left: 1.2rem; }
-    li { margin-bottom: 0.5rem; }
+    body {
+      font-family: Arial, sans-serif;
+      padding: 2rem;
+      background: #f9fafb;
+      color: #1f2937;
+      max-width: 720px;
+      margin: auto;
+    }
+    h1 {
+      color: #1e40af;
+      margin-bottom: 0.5rem;
+    }
+    h2 {
+      font-size: 1.2rem;
+      margin-top: 1.5rem;
+      color: #374151;
+    }
+    a {
+      color: #1e40af;
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+    ul {
+      padding-left: 1.2rem;
+      margin-bottom: 1rem;
+    }
+    li {
+      margin-bottom: 0.5rem;
+    }
     .video-placeholder {
       width: 100%;
       height: 360px;
-      border: 2px dashed #9ca3af;
+      background-color: #000;
       border-radius: 0.75rem;
+      margin: 1.5rem 0;
       display: flex;
       align-items: center;
       justify-content: center;
-      color: #6b7280;
+      color: #e5e7eb;
       font-size: 1.25rem;
-      background: #ffffff;
-      margin-bottom: 1rem;
+      font-style: italic;
+    }
+    .section {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 0.75rem;
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
     }
   </style>
 </head>
 <body>
-  <h1>MM2 Shopify Bot Integration</h1>
-  <p>A full-stack system to connect Shopify with Discord for automated MM2 shop operations.</p>
+  <h1>MM2 Shopify Bot System</h1>
+  <p>A professional multi-bot setup to manage MM2 orders, tickets, and customer verification via Discord + Shopify.</p>
 
-  <div class="video-placeholder">
-    📹 Video Coming Soon…
+  <div class="video-placeholder">📹 Video Demo Coming Soon...</div>
+
+  <div class="section">
+    <h2>🛒 Bot A — Shopify Integration + Order Claims</h2>
+    <ul>
+      <li><strong>Shopify Webhooks:</strong> Captures every new order with item, user email, and price.</li>
+      <li><strong>Order Claim System:</strong> Customers open a ticket and submit an order code for validation.</li>
+      <li><strong>Discord Linking:</strong> Matches Discord users with Shopify orders in your database.</li>
+      <li><strong>Earnings Tracker:</strong> Calculates total spend per user for stats and rewards.</li>
+      <li><strong>Webhook Alerts:</strong> Instantly notifies staff when new purchases are made.</li>
+    </ul>
   </div>
 
-  <ul>
-    <li><strong>Real-time Shopify Order Sync:</strong> Uses webhooks to capture every order instantly.</li>
-    <li><strong>Order Claim System:</strong> Customers can open a ticket in Discord and verify purchases with order codes.</li>
-    <li><strong>Auto-User Matching:</strong> Links orders to Discord users and stores purchase data securely.</li>
-    <li><strong>Earnings Tracking:</strong> Tracks how much each user has spent through the shop.</li>
-    <li><strong>Two-Bot Setup:</strong> One bot handles webhooks, the other displays commands and data.</li>
-    <li><strong>Live Order Alerts:</strong> New orders are instantly sent to a staff Discord channel via webhook.</li>
-  </ul>
+  <div class="section">
+    <h2>🎫 Bot B — Support Tickets + Commands</h2>
+    <ul>
+      <li><strong>Ticket System:</strong> Slash command + buttons to open and manage support tickets.</li>
+      <li><strong>Claim Assistance:</strong> Works alongside Bot A to verify purchases in ticket channels.</li>
+      <li><strong>User Commands:</strong> Allows users to view their past orders, purchase history, and more.</li>
+    </ul>
+  </div>
 
   <p><a href="index.html">← Back to Portfolio</a></p>
 </body>
