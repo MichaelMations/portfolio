@@ -471,8 +471,7 @@
 
 
 
-
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -721,6 +720,67 @@
       color: #162c9e;
     }
 
+    /* Modal Styles */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background-color: rgba(0, 0, 0, 0.5);
+      transition: opacity 0.3s ease;
+    }
+
+    .modal-content {
+      background-color: #fff;
+      margin: 15% auto;
+      padding: 20px;
+      border: 1px solid #888;
+      width: 80%;
+      max-width: 500px;
+      border-radius: var(--radius);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+      transition: transform 0.3s ease;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .close {
+      color: #aaa;
+      float: right;
+      font-size: 28px;
+      font-weight: bold;
+    }
+
+    .close:hover,
+    .close:focus {
+      color: black;
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    .example-button {
+      display: block;
+      background-color: var(--color-accent);
+      color: white;
+      padding: 10px;
+      margin: 10px 0;
+      text-align: center;
+      border-radius: var(--radius);
+      transition: background-color 0.3s;
+    }
+
+    .example-button:hover {
+      background-color: #162c9e;
+    }
+
     /* Responsive */
     @media (max-width: 700px) {
       .job-card {
@@ -818,7 +878,14 @@
           <span class="trait" tabindex="0" aria-label="Community Building">Community Building</span>
         </div>
       </article>
-    </section>
+
+<!--       <button id="examplesButton" class="btn-primary" role="button">View Examples</button>
+    </section> -->
+
+      <section style="display: flex; justify-content: center; margin-top: 1.5rem;">
+  <button id="examplesButton" class="btn-primary" role="button">View Examples</button>
+</section>
+
 
     <section id="contact" class="contact-section" aria-labelledby="contact-heading">
       <h2 id="contact-heading">Contact Me</h2>
@@ -829,7 +896,40 @@
     </section>
   </main>
 
+  <!-- Modal -->
+  <div id="examplesModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <span class="close">&times;</span>
+        <h2>Examples</h2>
+      </div>
+      <p>Select an example to view:</p>
+      <a href="/example1.html" class="example-button">Example 1</a>
+      <a href="/example2.html" class="example-button">Example 2</a>
+      <a href="/example3.html" class="example-button">Example 3</a>
+    </div>
+  </div>
+
   <script>
+    // Modal functionality
+    const modal = document.getElementById("examplesModal");
+    const btn = document.getElementById("examplesButton");
+    const span = document.getElementsByClassName("close")[0];
+
+    btn.onclick = function() {
+      modal.style.display = "block";
+    }
+
+    span.onclick = function() {
+      modal.style.display = "none";
+    }
+
+    window.onclick = function(event) {
+      if (event.target == modal) {
+        modal.style.display = "none";
+      }
+    }
+
     // Make .job-card clickable opening the data-link URL in a new tab, if there's a link
     document.querySelectorAll('.job-card').forEach(card => {
       card.addEventListener('click', e => {
