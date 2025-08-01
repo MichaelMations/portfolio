@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!-- <!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -299,6 +299,426 @@
       border-color: var(--color-accent);
       color: #162c9e;
       outline: none;
+    }
+
+    /* Responsive */
+    @media (max-width: 700px) {
+      .job-card {
+        max-width: 100%;
+        padding: 2rem 1.5rem;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <div class="nav-container" role="banner" aria-label="Primary Navigation">
+      <a href="#" class="logo" aria-label="Homepage">Rahm (MichaelMations)</a>
+      <nav>
+        <ul role="menubar" aria-label="Main Navigation">
+          <li role="none"><a role="menuitem" href="#about" tabindex="0">About</a></li>
+          <li role="none"><a role="menuitem" href="#jobs" tabindex="0">Current Roles</a></li>
+          <li role="none"><a role="menuitem" href="#contact" tabindex="0">Contact</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero" aria-labelledby="hero-heading">
+      <h1 id="hero-heading">Hi, I'm Rahm — Discord Bot Developer</h1>
+      <p>
+        I have been crafting powerful and efficient Discord bots for over one year,
+        utilizing JavaScript and Node.js to automate communities and create engaging user experiences.
+      </p>
+      <a href="#jobs" class="btn-primary" role="button">Explore My Roles</a>
+    </section>
+
+    <section id="jobs" class="jobs-section" aria-labelledby="jobs-heading">
+      <h2 id="jobs-heading">Current Roles</h2>
+
+      <article class="job-card" tabindex="0" role="link" aria-labelledby="job1-title job1-company" aria-describedby="job1-desc" data-link="https://discord.gg/v5TCJCHAb3">
+        <h3 id="job1-title" class="job-title">Company Engineer — Discord Bot Developer</h3>
+        <p id="job1-company" class="job-company">Nourity Corporations</p>
+        <p id="job1-desc" class="job-description">
+          Developed and maintained advanced Discord bots to enhance internal communication and operational workflows, focusing on scalability and security.
+        </p>
+        <div class="key-traits" aria-label="Key skills: Leadership, Automation, API Development">
+          <span class="trait" tabindex="0" aria-label="Leadership">Leadership</span>
+          <span class="trait" tabindex="0" aria-label="Automation">Automation</span>
+          <span class="trait" tabindex="0" aria-label="API Development">API Development</span>
+        </div>
+      </article>
+
+      <article class="job-card" tabindex="0" role="link" aria-labelledby="job2-title job2-company" aria-describedby="job2-desc" data-link="https://discord.gg/RfD8sDxF99">
+        <h3 id="job2-title" class="job-title">Lead Discord Bot Developer &amp; Co-founder</h3>
+        <p id="job2-company" class="job-company">SM Bot Creation</p>
+        <p id="job2-desc" class="job-description">
+          Architected and maintained multi-functional Discord bots handling moderation, custom commands, and dynamic event notifications for thousands of users.
+        </p>
+        <div class="key-traits" aria-label="Key skills: Leadership, API Development">
+          <span class="trait" tabindex="0" aria-label="Leadership">Leadership</span>
+          <span class="trait" tabindex="0" aria-label="API Development">API Development</span>
+        </div>
+      </article>
+
+      <article class="job-card" tabindex="0" role="link" aria-labelledby="job3-title job3-company" aria-describedby="job3-desc" data-link="https://discord.gg/QReNHe5Aum">
+        <h3 id="job3-title" class="job-title">Discord Bot Developer</h3>
+        <p id="job3-company" class="job-company">WSBooking</p>
+        <p id="job3-desc" class="job-description">
+          Developed and maintained Discord bot functionalities to improve server management and automate event tracking for client communities.
+        </p>
+        <div class="key-traits" aria-label="Key skills: Automation, Workflow Integration">
+          <span class="trait" tabindex="0" aria-label="Automation">Automation</span>
+          <span class="trait" tabindex="0" aria-label="Workflow Integration">Workflow Integration</span>
+        </div>
+      </article>
+
+      <article class="job-card" tabindex="0" role="link" aria-labelledby="job4-title job4-company" aria-describedby="job4-desc" data-link="https://discord.gg/UvNwFZunJF">
+        <h3 id="job4-title" class="job-title">Discord Bot Developer</h3>
+        <p id="job4-company" class="job-company">Tyma</p>
+        <p id="job4-desc" class="job-description">
+          Implemented integrations and features for Discord bots to streamline community interaction and deliver personalized notifications.
+        </p>
+        <div class="key-traits" aria-label="Key skills: API Integration, Community Interaction">
+          <span class="trait" tabindex="0" aria-label="API Integration">API Integration</span>
+          <span class="trait" tabindex="0" aria-label="Community Interaction">Community Interaction</span>
+        </div>
+      </article>
+
+      <article class="job-card" tabindex="0" role="link" aria-labelledby="job5-title job5-company" aria-describedby="job5-desc" data-link="">
+        <h3 id="job5-title" class="job-title">Freelance Discord Bot Developer</h3>
+        <p id="job5-company" class="job-company">Self-Employed / MichaelMations</p>
+        <p id="job5-desc" class="job-description">
+          Designed and built custom Discord bots tailored to client needs, including moderation tools, automated workflows, and interactive features to boost community engagement.
+        </p>
+        <div class="key-traits" aria-label="Key skills: Automation, Community Building">
+          <span class="trait" tabindex="0" aria-label="Automation">Automation</span>
+          <span class="trait" tabindex="0" aria-label="Community Building">Community Building</span>
+        </div>
+      </article>
+    </section>
+
+    <section id="contact" class="contact-section" aria-labelledby="contact-heading">
+      <h2 id="contact-heading">Contact Me</h2>
+      <p>
+        Or email me at
+        <a href="mailto:rahm@smbotcreation.com" class="contact-email">rahm@smbotcreation.com</a>
+      </p>
+    </section>
+  </main>
+
+  <script>
+    // Make .job-card clickable opening the data-link URL in a new tab, if there's a link
+    document.querySelectorAll('.job-card').forEach(card => {
+      card.addEventListener('click', e => {
+        const url = card.dataset.link;
+        if (url && url.trim() !== '') {
+          window.open(url, '_blank', 'noopener,noreferrer');
+        }
+      });
+      // Enable keyboard click (Enter/Space) for accessibility
+      card.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          card.click();
+        }
+      });
+    });
+  </script>
+</body>
+
+</html>
+ -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ <!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Rahm — Discord Bot Developer Portfolio</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --color-bg: #f0f4f8;
+      --color-text: #4a4a4a;
+      --color-headline: #1f2937;
+      --color-accent: #1e40af;
+      --color-card-bg: #ffffff;
+      --tag-bg: #dbeafe;
+      --radius: 0.75rem;
+      --shadow-light: rgba(30, 64, 175, 0.12);
+      --shadow-hover: rgba(30, 64, 175, 0.28);
+      --border-color: rgba(30, 64, 175, 0.11);
+      --transition: 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+      --max-width: 1200px;
+      --card-max-width: 720px;
+      --gap: 1.5rem;
+    }
+
+    /* Reset & base */
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: 'Inter', sans-serif;
+      background-color: var(--color-bg);
+      color: var(--color-text);
+      line-height: 1.6;
+      font-weight: 400;
+      font-size: 17px;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+      cursor: pointer;
+      transition: color var(--transition);
+    }
+
+    a:hover, a:focus {
+      color: var(--color-accent);
+      outline: none;
+    }
+
+    main {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 1rem;
+    }
+
+    /* Navigation */
+    header {
+      position: sticky;
+      top: 0;
+      background: var(--color-bg);
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+      z-index: 100;
+    }
+
+    .nav-container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem 1.5rem;
+    }
+
+    .logo {
+      font-weight: 700;
+      font-size: 1.5rem;
+      color: var(--color-accent);
+    }
+
+    nav ul {
+      list-style: none;
+      display: flex;
+      gap: 2rem;
+      margin: 0;
+      padding: 0;
+    }
+
+    nav li {
+      font-weight: 600;
+    }
+
+    nav a {
+      padding: 0.5rem 0.25rem;
+      border-radius: 0.375rem;
+      transition: background-color var(--transition), color var(--transition);
+    }
+
+    nav a:hover, nav a:focus {
+      background-color: var(--color-accent);
+      color: #fff;
+    }
+
+    /* Hero Section */
+    .hero {
+      padding: 6rem 1rem 5rem;
+      max-width: 720px;
+      margin: 0 auto 5rem;
+      text-align: center;
+    }
+
+    .hero h1 {
+      font-weight: 800;
+      font-size: clamp(3rem, 6vw, 4rem);
+      color: var(--color-headline);
+      margin: 0 0 0.75rem;
+    }
+
+    .hero p {
+      font-weight: 500;
+      font-size: 1.25rem;
+      color: var(--color-text);
+      margin: 0 0 2.5rem;
+    }
+
+    .btn-primary {
+      background-color: var(--color-accent);
+      color: #fff;
+      font-weight: 600;
+      font-size: 1.15rem;
+      padding: 0.85rem 3rem;
+      border: none;
+      border-radius: var(--radius);
+      cursor: pointer;
+      box-shadow: 0 7px 18px rgba(30, 64, 175, 0.3);
+      transition: background-color var(--transition), transform 0.3s;
+    }
+
+    .btn-primary:hover, .btn-primary:focus {
+      background-color: #162c9e;
+      transform: scale(1.05);
+    }
+
+    /* Jobs Section */
+    .jobs-section {
+      max-width: var(--max-width);
+      margin: 0 auto 6rem;
+      padding: 0 1rem;
+    }
+
+    .jobs-section h2 {
+      font-weight: 700;
+      font-size: 2.5rem;
+      color: var(--color-headline);
+      margin-bottom: 3.5rem;
+      text-align: center;
+    }
+
+    .job-card {
+      background-color: var(--color-card-bg);
+      max-width: var(--card-max-width);
+      margin: 0 auto 1.5rem;
+      padding: 2.5rem 3rem;
+      border-radius: var(--radius);
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+      transition: box-shadow 0.3s ease, transform 0.3s ease;
+      cursor: pointer;
+    }
+
+    .job-card:hover {
+      box-shadow: 0 10px 25px rgba(30, 64, 175, 0.15);
+      transform: scale(1.03);
+    }
+
+    .job-title {
+      font-weight: 700;
+      font-size: 1.4rem;
+      color: var(--color-accent);
+      margin: 0;
+    }
+
+    .job-company {
+      font-weight: 600;
+      font-size: 1.05rem;
+      color: #334155;
+      margin: 0 0 0.5rem;
+    }
+
+    .job-description {
+      font-weight: 500;
+      font-size: 1rem;
+      color: var(--color-text);
+      line-height: 1.4;
+      margin: 0;
+    }
+
+    /* Key Traits */
+    .key-traits {
+      display: flex;
+      gap: 0.75rem;
+      margin-top: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .trait {
+      background-color: var(--tag-bg);
+      color: var(--color-accent);
+      border-radius: 9999px;
+      padding: 0.25rem 0.9rem;
+      font-size: 0.9rem;
+      font-weight: 600;
+      text-align: center;
+      transition: background-color 0.3s ease;
+    }
+
+    .trait:hover {
+      background-color: #bfdbfe;
+    }
+
+    /* Contact Section */
+    .contact-section {
+      max-width: 600px;
+      margin: 0 auto 6rem;
+      padding: 0 1rem;
+      text-align: center;
+    }
+
+    .contact-section h2 {
+      font-weight: 700;
+      font-size: 2.5rem;
+      color: var(--color-headline);
+      margin-bottom: 2rem;
+    }
+
+    .contact-email {
+      font-size: 1.15rem;
+      color: var(--color-accent);
+      font-weight: 600;
+      border-bottom: 2px solid transparent;
+      transition: border-color 0.3s ease, color 0.3s ease;
+    }
+
+    .contact-email:hover, .contact-email:focus {
+      border-color: var(--color-accent);
+      color: #162c9e;
     }
 
     /* Responsive */
